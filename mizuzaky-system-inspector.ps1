@@ -4,10 +4,10 @@ $ErrorActionPreference = 'Stop'
 
 Add-Type -AssemblyName PresentationFramework
 
-$appDirectory = Join-Path $env:LOCALAPPDATA 'LinhVatMayTinh'
+$appDirectory = Join-Path $env:LOCALAPPDATA 'MizuzakySystemInspector'
 $logPath = Join-Path $appDirectory 'assistant.log'
 $catalogPath = Join-Path (Split-Path -Parent $PSCommandPath) 'error-catalog.json'
-$startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Linh Vat May Tinh.lnk'
+$startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
 $scriptPath = $PSCommandPath
 $script:window = $null
 $script:statusText = $null
@@ -35,7 +35,7 @@ try {
 catch {
     [void][System.Windows.MessageBox]::Show(
         ('Could not load the local error catalog: {0}' -f $_.Exception.Message),
-        'Linh Vat May Tinh',
+        'Mizuzaky System Inspector',
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Error
     )
@@ -271,7 +271,7 @@ function Toggle-Startup {
         Write-AssistantLog ('Startup setting failed: {0}' -f $_.Exception.Message)
         [void][System.Windows.MessageBox]::Show(
             ('Could not update the startup setting: {0}' -f $_.Exception.Message),
-            'Linh Vat May Tinh',
+            'Mizuzaky System Inspector',
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         )
@@ -283,7 +283,7 @@ $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     [void][System.Windows.MessageBox]::Show(
         'For safety, run this mascot as a standard (non-elevated) user. It does not need administrator rights.',
-        'Linh Vat May Tinh',
+        'Mizuzaky System Inspector',
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Warning
     )
@@ -291,7 +291,7 @@ if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 }
 
 $window = New-Object System.Windows.Window
-$window.Title = 'Linh Vat May Tinh'
+$window.Title = 'Mizuzaky System Inspector'
 $window.Width = 360
 $window.SizeToContent = [System.Windows.SizeToContent]::Height
 $window.ResizeMode = [System.Windows.ResizeMode]::NoResize
@@ -310,7 +310,7 @@ $mascot.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
 [void]$panel.Children.Add($mascot)
 
 $heading = New-Object System.Windows.Controls.TextBlock
-$heading.Text = 'Linh Vat May Tinh'
+$heading.Text = 'Mizuzaky System Inspector'
 $heading.FontSize = 20
 $heading.FontWeight = [System.Windows.FontWeights]::Bold
 $heading.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
@@ -356,7 +356,7 @@ $script:onlineSearchButton.Add_Click({
             Write-AssistantLog ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message)
             [void][System.Windows.MessageBox]::Show(
                 ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message),
-                'Linh Vat May Tinh',
+                'Mizuzaky System Inspector',
                 [System.Windows.MessageBoxButton]::OK,
                 [System.Windows.MessageBoxImage]::Error
             )
