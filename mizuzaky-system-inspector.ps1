@@ -29,8 +29,63 @@ $script:checkIntervalHours = 3
 $script:busyRetryMinutes = 15
 $script:busyCpuThreshold = 70
 $script:minimumFreeMemoryMB = 1536
+$script:language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+$localePath = Join-Path (Split-Path -Parent $PSCommandPath) 'locales.json'
+try {
+    $script:uiText = Get-Content -LiteralPath $localePath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    if (-not $script:uiText.en) {
+        throw 'The locale catalog must include English.'
+    }
+    if (-not $script:uiText.PSObject.Properties[$script:language]) {
+        $script:language = 'en'
+    }
+}
+catch {
+    [System.Windows.MessageBox]::Show(
+        ('Could not load the locale catalog: {0}' -f $_.Exception.Message),
+        'Mizuzaky System Inspector',
+        [System.Windows.MessageBoxButton]::OK,
+        [System.Windows.MessageBoxImage]::Error
+    ) | Out-Null
+    exit 1
+}
+$script:programmingRuntimes = @(
+    [pscustomobject]@{ Name = 'Python'; Commands = @('python.exe', 'py.exe'); Processes = @('python.exe', 'pythonw.exe') },
+    [pscustomobject]@{ Name = 'Node.js'; Commands = @('node.exe'); Processes = @('node.exe') },
+    [pscustomobject]@{ Name = 'Java'; Commands = @('java.exe'); Processes = @('java.exe', 'javaw.exe') },
+    [pscustomobject]@{ Name = '.NET'; Commands = @('dotnet.exe'); Processes = @('dotnet.exe') },
+    [pscustomobject]@{ Name = 'Go'; Commands = @('go.exe'); Processes = @('go.exe') },
+    [pscustomobject]@{ Name = 'Rust'; Commands = @('rustc.exe', 'cargo.exe'); Processes = @('rustc.exe', 'cargo.exe') }
+)
+$script:detectedRuntimes = @()
 
 New-Item -ItemType Directory -Path $appDirectory -Force | Out-Null
+
+function Get-Text {
+    param([Parameter(Mandatory)][string]$Key)
+    return $script:uiText.$($script:language).$Key
+}
+
+function Get-InstalledProgrammingRuntimes {
+    $detected = New-Object System.Collections.Generic.List[object]
+    foreach ($runtime in $script:programmingRuntimes) {
+        $foundCommand = $null
+        foreach ($commandName in $runtime.Commands) {
+            $foundCommand = Get-Command -Name $commandName -CommandType Application -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if ($foundCommand) {
+                break
+            }
+        }
+        if ($foundCommand) {
+            $detected.Add([pscustomobject]@{
+                Name = $runtime.Name
+                Processes = $runtime.Processes
+            })
+        }
+    }
+    return @($detected.ToArray())
+}
 
 function Read-EmailConfiguration {
     if (-not (Test-Path -LiteralPath $emailConfigPath) -or -not (Test-Path -LiteralPath $emailCredentialPath)) {
@@ -84,18 +139,18 @@ function Send-EmailMessage {
 }
 
 function Configure-Email {
-    $hostName = Read-Host 'SMTP server (for example, smtp.gmail.com)'
+    $hostName = Read-Host (Get-Text 'EmailSetupHost')
     if ([string]::IsNullOrWhiteSpace($hostName)) {
         throw 'SMTP server name cannot be empty.'
     }
-    $portInput = Read-Host 'SMTP submission port (usually 587)'
+    $portInput = Read-Host (Get-Text 'EmailSetupPort')
     $port = 0
     if (-not [int]::TryParse($portInput, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
         throw 'Enter a valid SMTP port between 1 and 65535.'
     }
 
-    $sender = Read-Host 'Sender email address'
-    $recipient = Read-Host 'Report recipient email address'
+    $sender = Read-Host (Get-Text 'EmailSetupSender')
+    $recipient = Read-Host (Get-Text 'EmailSetupRecipient')
     [void](New-Object System.Net.Mail.MailAddress($sender))
     [void](New-Object System.Net.Mail.MailAddress($recipient))
     $credential = Get-Credential -Message 'Enter the SMTP username and app password. It is encrypted for this Windows user.'
@@ -113,11 +168,11 @@ function Configure-Email {
     $credential | Export-Clixml -LiteralPath $emailCredentialPath -Force
     Write-Output ('Email settings saved under {0}. The credential is protected for this Windows user.' -f $appDirectory)
 
-    $answer = Read-Host 'Send a test email now? (Y/N)'
+    $answer = Read-Host (Get-Text 'EmailTestPrompt')
     if ($answer -match '^(y|yes)$') {
         $configuration = Read-EmailConfiguration
         Send-EmailMessage -Configuration $configuration `
-            -Subject 'Mizuzaky System Inspector email test' `
+            -Subject (Get-Text 'EmailReportTitle') `
             -Body ('Email reporting is configured for computer {0} at {1}.' -f $env:COMPUTERNAME, (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
         Write-Output 'Test email sent successfully.'
     }
@@ -195,29 +250,29 @@ function Send-HealthReport {
     }
     catch {
         Write-AssistantLog ('Email report could not load its local configuration: {0}' -f $_.Exception.Message)
-        $script:statusText.Text += [Environment]::NewLine + 'Email report could not load its local configuration.'
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'EmailConfigError')
         return
     }
     if (-not $configuration) {
         Write-AssistantLog 'Email report not sent: configure an SMTP account with -ConfigureEmail.'
-        $script:statusText.Text += [Environment]::NewLine + 'Email is not configured. Run -ConfigureEmail to enable remote reports.'
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'EmailMissing')
         return
     }
 
     $body = @(
-        'Mizuzaky System Inspector report'
-        ('Computer: {0}' -f $env:COMPUTERNAME)
-        ('Time: {0}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz'))
+        (Get-Text 'EmailReportTitle')
+        ((Get-Text 'ReportComputer') -f $env:COMPUTERNAME)
+        ((Get-Text 'ReportTime') -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz'))
         ''
-        'Findings:'
+        (Get-Text 'ReportFindings')
         $reportText
         ''
-        'Only the issue summary is included. Full Windows event messages are not sent.'
+        (Get-Text 'EmailReportPrivacy')
     ) -join [Environment]::NewLine
 
     try {
         Send-EmailMessage -Configuration $configuration `
-            -Subject ('System health report from {0}' -f $env:COMPUTERNAME) `
+            -Subject ((Get-Text 'EmailReportSubject') -f $env:COMPUTERNAME) `
             -Body $body
         [pscustomobject]@{
             fingerprint = $fingerprint
@@ -227,7 +282,7 @@ function Send-HealthReport {
     }
     catch {
         Write-AssistantLog ('Email report failed: {0}' -f $_.Exception.Message)
-        $script:statusText.Text += [Environment]::NewLine + ('Email report failed: {0}' -f $_.Exception.Message)
+        $script:statusText.Text += [Environment]::NewLine + ((Get-Text 'EmailFailed') -f $_.Exception.Message)
     }
 }
 
@@ -262,7 +317,7 @@ function Get-SystemLoad {
 
 function Invoke-ScheduledHealthCheck {
     if (-not $script:prioritySet) {
-        $script:statusText.Text = 'Checks paused: the mascot could not set its process priority to BelowNormal.'
+        $script:statusText.Text = Get-Text 'PriorityPaused'
         Write-AssistantLog 'Health check postponed because the mascot could not lower its process priority.'
         $script:checkTimer.Interval = [TimeSpan]::FromMinutes($script:busyRetryMinutes)
         return
@@ -272,14 +327,14 @@ function Invoke-ScheduledHealthCheck {
         $load = Get-SystemLoad
     }
     catch {
-        $script:statusText.Text = 'Checks postponed: could not safely measure current system load.'
+        $script:statusText.Text = Get-Text 'LoadUnavailable'
         Write-AssistantLog ('Health check postponed because system load could not be measured: {0}' -f $_.Exception.Message)
         $script:checkTimer.Interval = [TimeSpan]::FromMinutes($script:busyRetryMinutes)
         return
     }
 
     if ($load.CpuPercent -ge $script:busyCpuThreshold -or $load.FreeMemoryMB -lt $script:minimumFreeMemoryMB) {
-        $script:statusText.Text = ('Machine busy (CPU {0}%, free memory {1} MB). Checks postponed for {2} minutes.' -f
+        $script:statusText.Text = ((Get-Text 'MachineBusy') -f
             $load.CpuPercent, $load.FreeMemoryMB, $script:busyRetryMinutes)
         Write-AssistantLog ('Health check postponed: CPU {0}%, free memory {1} MB.' -f $load.CpuPercent, $load.FreeMemoryMB)
         $script:checkTimer.Interval = [TimeSpan]::FromMinutes($script:busyRetryMinutes)
@@ -290,7 +345,7 @@ function Invoke-ScheduledHealthCheck {
         Invoke-HealthCheck
     }
     catch {
-        $script:statusText.Text = 'Health check failed; see the local log for details.'
+        $script:statusText.Text = Get-Text 'CheckFailed'
         Write-AssistantLog ('Health check failed: {0}' -f $_.Exception.Message)
         Send-HealthReport -Issues @('Health check failed; details are recorded in the local log.')
     }
@@ -303,18 +358,20 @@ function Invoke-HealthCheck {
     $issues = New-Object System.Collections.Generic.List[string]
     $script:onlineSearchQuery = $null
     $script:onlineSearchButton.IsEnabled = $false
+    $script:detectedRuntimes = Get-InstalledProgrammingRuntimes
+    $reportedRuntimeEvents = @{}
 
     try {
         $drives = @(Get-CimInstance -ClassName Win32_LogicalDisk -Filter 'DriveType=3' -ErrorAction Stop)
         foreach ($drive in $drives) {
             $freeGiB = [math]::Round($drive.FreeSpace / 1GB, 1)
             if ($freeGiB -lt 5) {
-                $issues.Add(('{0} has only {1} GB free. No files were deleted.' -f $drive.DeviceID, $freeGiB))
+                $issues.Add(((Get-Text 'DiskLow') -f $drive.DeviceID, $freeGiB))
             }
         }
     }
     catch {
-        $issues.Add(('Disk check failed: {0}' -f $_.Exception.Message))
+        $issues.Add(((Get-Text 'DiskFailed') -f $_.Exception.Message))
         Write-AssistantLog ('Disk check failed: {0}' -f $_.Exception.Message)
     }
 
@@ -337,11 +394,12 @@ function Invoke-HealthCheck {
                 throw ('ipconfig /flushdns exited with code {0}.' -f $flush.ExitCode)
             }
             [void][System.Net.Dns]::GetHostAddresses('www.microsoft.com')
-            $issues.Add(('DNS lookup failed; the allowlisted DNS cache refresh succeeded. Source: {0}' -f $dnsRepair.sourceUrl))
+            $issues.Add(((Get-Text 'DnsRepairSucceeded') -f $dnsRepair.sourceUrl))
             Write-AssistantLog ('DNS cache refresh succeeded. Source: {0}' -f $dnsRepair.sourceUrl)
         }
         catch {
-            $issues.Add(('DNS lookup failed and was not safely repaired: {0}. Manual guidance: {1}' -f $_.Exception.Message, $(if ($dnsRepair) { $dnsRepair.sourceUrl } else { 'No verified source is configured.' })))
+            $issues.Add(((Get-Text 'DnsLookupFailed') -f $dnsError))
+            $issues.Add(((Get-Text 'DnsRepairFailed') -f $_.Exception.Message, $(if ($dnsRepair) { $dnsRepair.sourceUrl } else { 'No verified source is configured.' })))
             Write-AssistantLog ('DNS repair was skipped or did not resolve the issue: {0}' -f $_.Exception.Message)
         }
     }
@@ -354,6 +412,27 @@ function Invoke-HealthCheck {
                 $recentEvents = @(Get-WinEvent -LogName $logName -MaxEvents 100 -ErrorAction Stop |
                     Where-Object { $_.Level -eq 2 -and $_.TimeCreated -ge (Get-Date).AddHours(-24) })
                 foreach ($eventRecord in $recentEvents) {
+                    if ($logName -eq 'Application' -and $eventRecord.Id -in @(1000, 1001) -and $script:detectedRuntimes.Count -gt 0) {
+                        try {
+                            $eventMessage = $eventRecord.Message
+                            foreach ($runtime in $script:detectedRuntimes) {
+                                $matchedProcess = $runtime.Processes |
+                                    Where-Object { $eventMessage -match ('(?i)(?<![\w.-]){0}(?![\w.-])' -f [regex]::Escape($_)) } |
+                                    Select-Object -First 1
+                                if ($matchedProcess) {
+                                    $runtimeEventKey = '{0}|{1}|{2}' -f $runtime.Name, $eventRecord.Id, $eventRecord.TimeCreated.Ticks
+                                    if (-not $reportedRuntimeEvents.ContainsKey($runtimeEventKey)) {
+                                        $reportedRuntimeEvents[$runtimeEventKey] = $true
+                                        $issues.Add(((Get-Text 'RuntimeCrash') -f $runtime.Name, $eventRecord.Id, $eventRecord.TimeCreated.ToString('yyyy-MM-dd HH:mm')))
+                                    }
+                                }
+                            }
+                        }
+                        catch {
+                            Write-AssistantLog ('Could not inspect event {0} for a programming-runtime crash: {1}' -f $eventRecord.Id, $_.Exception.Message)
+                        }
+                    }
+
                     $key = '{0}|{1}|{2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
                     if ($seenEvents.ContainsKey($key)) {
                         continue
@@ -367,7 +446,12 @@ function Invoke-HealthCheck {
                     if ($entry) {
                         $knownEventCount++
                         if ($knownEventCount -le 5) {
-                            $issues.Add(('{0} event {1} ({2}): {3}' -f $eventRecord.LogName, $eventRecord.Id, $eventRecord.ProviderName, $entry.summary))
+                            $summaryProperty = 'summary{0}' -f $script:language
+                            $summary = $entry.$summaryProperty
+                            if (-not $summary) {
+                                $summary = $entry.summary
+                            }
+                            $issues.Add(((Get-Text 'EventKnown') -f $eventRecord.Id, $eventRecord.ProviderName, $eventRecord.LogName, $summary))
                         }
                         if (-not $script:onlineSearchQuery) {
                             $script:onlineSearchQuery = 'Windows event {0} {1} {2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
@@ -382,16 +466,16 @@ function Invoke-HealthCheck {
                 }
             }
             catch {
-                $issues.Add(('Could not inspect the {0} event log: {1}' -f $logName, $_.Exception.Message))
+                $issues.Add(((Get-Text 'EventLogFailed') -f $logName, $_.Exception.Message))
                 Write-AssistantLog ('Could not inspect the {0} event log: {1}' -f $logName, $_.Exception.Message)
             }
     }
 
     if ($knownEventCount -gt 5) {
-            $issues.Add(('{0} additional known event type(s) were found; see the local log for the count.' -f ($knownEventCount - 5)))
+            $issues.Add(((Get-Text 'EventExtraKnown') -f ($knownEventCount - 5)))
     }
     if ($unknownEventCount -gt 0) {
-            $issues.Add(('{0} recent error event type(s) are not in the local catalog. Only a generic event identifier can be searched online.' -f $unknownEventCount))
+            $issues.Add(((Get-Text 'EventUnknown') -f $unknownEventCount))
     }
     if ($script:onlineSearchQuery) {
             $script:onlineSearchButton.IsEnabled = $true
@@ -402,17 +486,26 @@ function Invoke-HealthCheck {
             Test-NetworkConnection
     }
     catch {
-        $issues.Add(('Internet connection test failed: {0}' -f $_.Exception.Message))
+        $issues.Add(((Get-Text 'NetworkFailed') -f $_.Exception.Message))
         Write-AssistantLog ('Internet connection test failed: {0}' -f $_.Exception.Message)
     }
 
     if ($issues.Count -eq 0) {
-        $script:statusText.Text = 'All checks look good.'
+        $script:statusText.Text = Get-Text 'AllGood'
         Write-AssistantLog 'Health check completed: no issues detected.'
     }
     else {
-        $script:statusText.Text = $issues -join [Environment]::NewLine
+        $script:statusText.Text = ((Get-Text 'IssuesFound') -f $issues.Count) + [Environment]::NewLine + ($issues -join [Environment]::NewLine)
         Write-AssistantLog ('Health check found {0} issue(s).' -f $issues.Count)
+    }
+
+    if ($script:detectedRuntimes.Count -gt 0) {
+        $runtimeNames = ($script:detectedRuntimes | ForEach-Object { $_.Name }) -join ', '
+        $script:statusText.Text += [Environment]::NewLine + ((Get-Text 'RuntimeHeading') -f $runtimeNames)
+        Write-AssistantLog ('Detected programming runtimes: {0}' -f $runtimeNames)
+    }
+    else {
+        Write-AssistantLog 'No supported programming runtimes were detected on PATH.'
     }
 
     Send-HealthReport -Issues @($issues.ToArray())
@@ -420,10 +513,10 @@ function Invoke-HealthCheck {
 
 function Update-StartupButton {
     if (Test-Path -LiteralPath $startupLink) {
-        $script:startupButton.Content = 'Turn off startup'
+        $script:startupButton.Content = Get-Text 'StartupOff'
     }
     else {
-        $script:startupButton.Content = 'Start with Windows'
+        $script:startupButton.Content = Get-Text 'StartupOn'
     }
 }
 
@@ -431,8 +524,8 @@ function Toggle-Startup {
     try {
         if (Test-Path -LiteralPath $startupLink) {
             $answer = [System.Windows.MessageBox]::Show(
-                'This removes only this app shortcut from your Startup folder. Continue?',
-                'Confirm removal',
+                (Get-Text 'ConfirmStartupRemoval'),
+                (Get-Text 'StartupRemovalTitle'),
                 [System.Windows.MessageBoxButton]::YesNo,
                 [System.Windows.MessageBoxImage]::Warning
             )
@@ -459,8 +552,8 @@ function Toggle-Startup {
     catch {
         Write-AssistantLog ('Startup setting failed: {0}' -f $_.Exception.Message)
         [void][System.Windows.MessageBox]::Show(
-            ('Could not update the startup setting: {0}' -f $_.Exception.Message),
-            'Mizuzaky System Inspector',
+            ((Get-Text 'StartupFailed') -f $_.Exception.Message),
+            (Get-Text 'AppTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         )
@@ -471,8 +564,8 @@ $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     [void][System.Windows.MessageBox]::Show(
-        'For safety, run this mascot as a standard (non-elevated) user. It does not need administrator rights.',
-        'Mizuzaky System Inspector',
+        (Get-Text 'ElevatedWarning'),
+        (Get-Text 'AppTitle'),
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Warning
     )
@@ -480,7 +573,7 @@ if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 }
 
 $window = New-Object System.Windows.Window
-$window.Title = 'Mizuzaky System Inspector'
+$window.Title = Get-Text 'AppTitle'
 $window.Width = 360
 $window.SizeToContent = [System.Windows.SizeToContent]::Height
 $window.ResizeMode = [System.Windows.ResizeMode]::NoResize
@@ -499,7 +592,7 @@ $mascot.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
 [void]$panel.Children.Add($mascot)
 
 $heading = New-Object System.Windows.Controls.TextBlock
-$heading.Text = 'Mizuzaky System Inspector'
+$heading.Text = Get-Text 'AppTitle'
 $heading.FontSize = 20
 $heading.FontWeight = [System.Windows.FontWeights]::Bold
 $heading.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
@@ -507,7 +600,7 @@ $heading.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
 [void]$panel.Children.Add($heading)
 
 $script:statusText = New-Object System.Windows.Controls.TextBlock
-$script:statusText.Text = 'Starting checks...'
+$script:statusText.Text = Get-Text 'Starting'
 $script:statusText.TextWrapping = [System.Windows.TextWrapping]::Wrap
 $script:statusText.Margin = New-Object System.Windows.Thickness(0, 0, 0, 10)
 [void]$panel.Children.Add($script:statusText)
@@ -517,7 +610,7 @@ $buttonPanel.Orientation = [System.Windows.Controls.Orientation]::Vertical
 $buttonPanel.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
 
 $scanButton = New-Object System.Windows.Controls.Button
-$scanButton.Content = 'Check now'
+$scanButton.Content = Get-Text 'CheckNow'
 $scanButton.Padding = New-Object System.Windows.Thickness(10, 5, 10, 5)
 $scanButton.Margin = New-Object System.Windows.Thickness(0, 0, 6, 0)
 $scanButton.Add_Click({ Invoke-ScheduledHealthCheck })
@@ -530,7 +623,7 @@ $script:startupButton.Add_Click({ Toggle-Startup })
 [void]$buttonPanel.Children.Add($script:startupButton)
 
 $script:onlineSearchButton = New-Object System.Windows.Controls.Button
-$script:onlineSearchButton.Content = 'Search Microsoft docs'
+$script:onlineSearchButton.Content = Get-Text 'SearchDocs'
 $script:onlineSearchButton.IsEnabled = $false
 $script:onlineSearchButton.Padding = New-Object System.Windows.Thickness(10, 5, 10, 5)
 $script:onlineSearchButton.Margin = New-Object System.Windows.Thickness(0, 0, 6, 0)
@@ -545,7 +638,7 @@ $script:onlineSearchButton.Add_Click({
             Write-AssistantLog ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message)
             [void][System.Windows.MessageBox]::Show(
                 ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message),
-                'Mizuzaky System Inspector',
+                (Get-Text 'AppTitle'),
                 [System.Windows.MessageBoxButton]::OK,
                 [System.Windows.MessageBoxImage]::Error
             )
@@ -555,7 +648,7 @@ $script:onlineSearchButton.Add_Click({
 [void]$buttonPanel.Children.Add($script:onlineSearchButton)
 
 $exitButton = New-Object System.Windows.Controls.Button
-$exitButton.Content = 'Exit'
+$exitButton.Content = Get-Text 'Exit'
 $exitButton.Padding = New-Object System.Windows.Thickness(10, 5, 10, 5)
 $exitButton.Add_Click({ $script:window.Close() })
 [void]$buttonPanel.Children.Add($exitButton)

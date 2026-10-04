@@ -8,6 +8,8 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 
 - Checks local disk space, DNS resolution, and Internet connectivity.
 - Reviews recent error events from the Windows **System** and **Application** logs against [`error-catalog.json`](./error-catalog.json).
+- Selects Vietnamese UI when the Windows UI language is Vietnamese; otherwise uses English as the fallback. UI strings are kept in [`locales.json`](./locales.json) for future translations.
+- Detects Python, Node.js (JavaScript/TypeScript), Java, .NET (including C#), Go, and Rust executables available on `PATH`. It reports matching recent Windows application-crash events without running runtimes, scanning projects, or reading source code.
 - Runs an initial check at startup, then checks every three hours.
 - Defers checks for 15 minutes when CPU usage is at least 70% or free memory is below 1.5 GB.
 - Sets only its own process priority to `BelowNormal`; it does not close or reprioritize other applications.
@@ -16,13 +18,13 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 - Opens a Microsoft Learn search only when the user clicks the search button. It sends a generic event identifier, not event log contents.
 - Writes a local log to `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-The error catalog is an editable starter set, not a comprehensive knowledge base. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
+The error catalog is an editable starter set, not a comprehensive knowledge base. Runtime detection is limited to tools available on `PATH` and crash events Windows records; it is not a compiler, debugger, or project scanner. UI localization currently supports Vietnamese and English fallback; other Windows display languages use English. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
 
 ## Requirements
 
 - Windows with Windows PowerShell 5.1 and WPF.
 - A standard, non-administrator user account.
-- Keep `mizuzaky-system-inspector.ps1` and `error-catalog.json` in the same folder.
+- Keep `mizuzaky-system-inspector.ps1`, `error-catalog.json`, and `locales.json` in the same folder.
 
 ## Run
 

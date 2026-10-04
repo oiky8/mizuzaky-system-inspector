@@ -8,6 +8,8 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 
 - Kiểm tra dung lượng ổ đĩa, phân giải DNS và kết nối Internet.
 - Đọc lỗi gần đây trong nhật ký **System** và **Application** của Windows rồi đối chiếu với [`error-catalog.json`](./error-catalog.json).
+- Tự chọn giao diện tiếng Việt nếu ngôn ngữ hiển thị Windows là tiếng Việt; các ngôn ngữ khác dùng English dự phòng. Nội dung giao diện nằm trong [`locales.json`](./locales.json) để có thể bổ sung bản dịch.
+- Nhận diện công cụ Python, Node.js (JavaScript/TypeScript), Java, .NET (bao gồm C#), Go và Rust có thể gọi qua `PATH`. Ứng dụng báo cáo sự kiện lỗi ứng dụng Windows liên quan, nhưng không chạy runtime, quét dự án hay đọc mã nguồn.
 - Kiểm tra lần đầu khi khởi động ứng dụng, sau đó mỗi 3 giờ.
 - Hoãn kiểm tra 15 phút nếu CPU từ 70% trở lên hoặc RAM trống dưới 1,5 GB.
 - Chỉ đặt tiến trình của linh vật ở mức ưu tiên `BelowNormal`; không đóng hoặc thay đổi mức ưu tiên ứng dụng khác.
@@ -16,13 +18,13 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 - Chỉ mở tìm kiếm Microsoft Learn khi người dùng bấm nút. Ứng dụng chỉ gửi mã sự kiện chung, không gửi nội dung nhật ký.
 - Ghi nhật ký cục bộ tại `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Ứng dụng không tải hoặc chạy kết quả tìm kiếm hay mã sửa lỗi từ Internet. Lỗi chưa biết, rủi ro cao hoặc có thể ảnh hưởng thành phần khác sẽ chỉ được báo cáo để chủ máy xem xét.
+Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Nhận diện runtime chỉ áp dụng cho công cụ có trên `PATH` và sự kiện lỗi Windows đã ghi lại; linh vật không phải trình biên dịch, trình gỡ lỗi hay công cụ quét dự án. Giao diện hiện hỗ trợ tiếng Việt; nếu Windows dùng ngôn ngữ khác, ứng dụng chuyển sang English. Ứng dụng không tải hoặc chạy kết quả tìm kiếm hay mã sửa lỗi từ Internet. Lỗi chưa biết, rủi ro cao hoặc có thể ảnh hưởng thành phần khác sẽ chỉ được báo cáo để chủ máy xem xét.
 
 ## Yêu cầu
 
 - Windows có Windows PowerShell 5.1 và WPF.
 - Tài khoản người dùng thông thường, không có quyền quản trị viên.
-- Đặt `mizuzaky-system-inspector.ps1` và `error-catalog.json` cùng một thư mục.
+- Đặt `mizuzaky-system-inspector.ps1`, `error-catalog.json` và `locales.json` cùng một thư mục.
 
 ## Chạy
 

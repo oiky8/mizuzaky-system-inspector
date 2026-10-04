@@ -14,67 +14,78 @@
       "log": "System",
       "provider": "Service Control Manager",
       "eventId": 7000,
-      "summary": "A Windows service failed to start. Check the service name and its related application before changing its startup settings."
+      "summary": "A Windows service failed to start. Check the service name and its related application before changing its startup settings.",
+      "summaryVi": "Một dịch vụ Windows không khởi động được. Kiểm tra tên dịch vụ và ứng dụng liên quan trước khi đổi thiết lập khởi động."
     },
     {
       "log": "System",
       "provider": "Service Control Manager",
       "eventId": 7001,
-      "summary": "A service dependency failed. Check the dependent service and its prerequisites; do not change services automatically."
+      "summary": "A service dependency failed. Check the dependent service and its prerequisites; do not change services automatically.",
+      "summaryVi": "Một dịch vụ phụ thuộc bị lỗi. Kiểm tra dịch vụ liên quan và điều kiện cần; không tự thay đổi dịch vụ."
     },
     {
       "log": "System",
       "provider": "Service Control Manager",
       "eventId": 7009,
-      "summary": "A service timed out while starting. Check recent software changes and the service-specific event details."
+      "summary": "A service timed out while starting. Check recent software changes and the service-specific event details.",
+      "summaryVi": "Dịch vụ khởi động quá thời gian cho phép. Kiểm tra thay đổi phần mềm gần đây và chi tiết sự kiện."
     },
     {
       "log": "System",
       "provider": "disk",
       "eventId": 7,
-      "summary": "Windows reported a bad block. Back up important data and check the storage device; do not run repairs before protecting data."
+      "summary": "Windows reported a bad block. Back up important data and check the storage device; do not run repairs before protecting data.",
+      "summaryVi": "Windows phát hiện khối dữ liệu lỗi. Hãy sao lưu dữ liệu quan trọng và kiểm tra ổ lưu trữ trước khi sửa chữa."
     },
     {
       "log": "System",
       "provider": "disk",
       "eventId": 51,
-      "summary": "A storage I/O operation reported an error. Check device health, cables, and backups before attempting repairs."
+      "summary": "A storage I/O operation reported an error. Check device health, cables, and backups before attempting repairs.",
+      "summaryVi": "Thao tác đọc/ghi ổ lưu trữ gặp lỗi. Kiểm tra tình trạng thiết bị, dây kết nối và bản sao lưu trước khi sửa."
     },
     {
       "log": "System",
       "provider": "disk",
       "eventId": 153,
-      "summary": "A storage operation was retried. Check drive health and connection stability; repeated events need investigation."
+      "summary": "A storage operation was retried. Check drive health and connection stability; repeated events need investigation.",
+      "summaryVi": "Windows phải thử lại thao tác ổ đĩa. Kiểm tra tình trạng ổ và độ ổn định kết nối nếu lỗi lặp lại."
     },
     {
       "log": "System",
       "provider": "Ntfs",
       "eventId": 55,
-      "summary": "A file-system structure error was reported. Back up important data and seek a planned disk check; no disk repair is started automatically."
+      "summary": "A file-system structure error was reported. Back up important data and seek a planned disk check; no disk repair is started automatically.",
+      "summaryVi": "Phát hiện lỗi cấu trúc hệ thống tệp. Hãy sao lưu dữ liệu và lên kế hoạch kiểm tra ổ; ứng dụng không tự sửa ổ đĩa."
     },
     {
       "log": "System",
       "provider": "Microsoft-Windows-Kernel-Power",
       "eventId": 41,
-      "summary": "Windows restarted without a clean shutdown. This event does not identify the root cause; check power, overheating, and nearby error events."
+      "summary": "Windows restarted without a clean shutdown. This event does not identify the root cause; check power, overheating, and nearby error events.",
+      "summaryVi": "Windows khởi động lại không đúng quy trình. Sự kiện này không chỉ ra nguyên nhân; kiểm tra nguồn điện, nhiệt độ và lỗi lân cận."
     },
     {
       "log": "System",
       "provider": "DistributedCOM",
       "eventId": 10016,
-      "summary": "This event is commonly benign. Do not edit DCOM permissions or the registry based on this event alone."
+      "summary": "This event is commonly benign. Do not edit DCOM permissions or the registry based on this event alone.",
+      "summaryVi": "Sự kiện này thường không nghiêm trọng. Không chỉnh quyền DCOM hoặc registry chỉ dựa trên sự kiện này."
     },
     {
       "log": "Application",
       "provider": "Application Error",
       "eventId": 1000,
-      "summary": "An application crashed. Check the affected application and nearby Windows Error Reporting events; update or repair only that application."
+      "summary": "An application crashed. Check the affected application and nearby Windows Error Reporting events; update or repair only that application.",
+      "summaryVi": "Một ứng dụng bị dừng đột ngột. Kiểm tra ứng dụng đó và các sự kiện báo lỗi Windows gần thời điểm xảy ra."
     },
     {
       "log": "Application",
       "provider": "Windows Error Reporting",
       "eventId": 1001,
-      "summary": "Windows recorded an application or system failure report. Use its report details to identify the affected component."
+      "summary": "Windows recorded an application or system failure report. Use its report details to identify the affected component.",
+      "summaryVi": "Windows ghi nhận báo cáo lỗi ứng dụng hoặc hệ thống. Xem chi tiết báo cáo để xác định thành phần bị ảnh hưởng."
     }
   ]
 }
