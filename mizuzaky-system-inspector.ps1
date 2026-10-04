@@ -29,7 +29,16 @@ $script:checkIntervalHours = 3
 $script:busyRetryMinutes = 15
 $script:busyCpuThreshold = 70
 $script:minimumFreeMemoryMB = 1536
-$script:language = [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName
+$uiCulture = [Globalization.CultureInfo]::CurrentUICulture
+if ($uiCulture.Name -match '^zh-(TW|HK|MO|Hant)') {
+    $script:language = 'zh-TW'
+}
+elseif ($uiCulture.TwoLetterISOLanguageName -eq 'zh') {
+    $script:language = 'zh-CN'
+}
+else {
+    $script:language = $uiCulture.TwoLetterISOLanguageName
+}
 $localePath = Join-Path (Split-Path -Parent $PSCommandPath) 'locales.json'
 try {
     $script:uiText = Get-Content -LiteralPath $localePath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
@@ -55,7 +64,14 @@ $script:programmingRuntimes = @(
     [pscustomobject]@{ Name = 'Java'; Commands = @('java.exe'); Processes = @('java.exe', 'javaw.exe') },
     [pscustomobject]@{ Name = '.NET'; Commands = @('dotnet.exe'); Processes = @('dotnet.exe') },
     [pscustomobject]@{ Name = 'Go'; Commands = @('go.exe'); Processes = @('go.exe') },
-    [pscustomobject]@{ Name = 'Rust'; Commands = @('rustc.exe', 'cargo.exe'); Processes = @('rustc.exe', 'cargo.exe') }
+    [pscustomobject]@{ Name = 'Rust'; Commands = @('rustc.exe', 'cargo.exe'); Processes = @('rustc.exe', 'cargo.exe') },
+    [pscustomobject]@{ Name = 'PHP'; Commands = @('php.exe'); Processes = @('php.exe') },
+    [pscustomobject]@{ Name = 'Ruby'; Commands = @('ruby.exe'); Processes = @('ruby.exe') },
+    [pscustomobject]@{ Name = 'Perl'; Commands = @('perl.exe'); Processes = @('perl.exe') },
+    [pscustomobject]@{ Name = 'Lua'; Commands = @('lua.exe', 'luajit.exe'); Processes = @('lua.exe', 'luajit.exe') },
+    [pscustomobject]@{ Name = 'R'; Commands = @('R.exe'); Processes = @('R.exe', 'Rscript.exe') },
+    [pscustomobject]@{ Name = 'Swift'; Commands = @('swift.exe'); Processes = @('swift.exe') },
+    [pscustomobject]@{ Name = 'C/C++ toolchain'; Commands = @('clang.exe', 'gcc.exe', 'cl.exe'); Processes = @('clang.exe', 'gcc.exe', 'cl.exe') }
 )
 $script:detectedRuntimes = @()
 
@@ -446,7 +462,8 @@ function Invoke-HealthCheck {
                     if ($entry) {
                         $knownEventCount++
                         if ($knownEventCount -le 5) {
-                            $summaryProperty = 'summary{0}' -f $script:language
+                            $summarySuffix = $script:language.Replace('-', '')
+                            $summaryProperty = 'summary{0}' -f $summarySuffix
                             $summary = $entry.$summaryProperty
                             if (-not $summary) {
                                 $summary = $entry.summary
@@ -581,6 +598,12 @@ $window.WindowStartupLocation = [System.Windows.WindowStartupLocation]::Manual
 $window.ShowInTaskbar = $true
 $window.Topmost = $false
 $window.Background = [System.Windows.Media.Brushes]::White
+$window.FlowDirection = if ($script:language -eq 'ar') {
+    [System.Windows.FlowDirection]::RightToLeft
+}
+else {
+    [System.Windows.FlowDirection]::LeftToRight
+}
 
 $panel = New-Object System.Windows.Controls.StackPanel
 $panel.Margin = New-Object System.Windows.Thickness(16)
@@ -660,6 +683,7 @@ $script:logText.TextWrapping = [System.Windows.TextWrapping]::Wrap
 $script:logText.VerticalScrollBarVisibility = [System.Windows.Controls.ScrollBarVisibility]::Auto
 $script:logText.Height = 90
 $script:logText.Margin = New-Object System.Windows.Thickness(0, 10, 0, 0)
+$script:logText.Visibility = [System.Windows.Visibility]::Collapsed
 [void]$panel.Children.Add($script:logText)
 
 $window.Content = $panel
