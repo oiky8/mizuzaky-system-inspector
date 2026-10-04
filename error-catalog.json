@@ -1,5 +1,14 @@
 {
   "version": 1,
+  "safeRepairs": [
+    {
+      "id": "flush-dns-cache",
+      "trigger": "DNS lookup failure while a direct IP connection is available",
+      "action": "FlushDnsCache",
+      "sourceUrl": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig",
+      "notes": "Clears only the local DNS resolver cache. The app verifies connectivity and DNS again afterward. No downloaded code or arbitrary command is executed."
+    }
+  ],
   "entries": [
     {
       "log": "System",

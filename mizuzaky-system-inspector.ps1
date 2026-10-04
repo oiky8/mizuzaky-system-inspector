@@ -1,11 +1,18 @@
 #requires -Version 5.1
 
+param(
+    [switch]$ConfigureEmail
+)
+
 $ErrorActionPreference = 'Stop'
 
 Add-Type -AssemblyName PresentationFramework
 
 $appDirectory = Join-Path $env:LOCALAPPDATA 'MizuzakySystemInspector'
 $logPath = Join-Path $appDirectory 'assistant.log'
+$emailConfigPath = Join-Path $appDirectory 'email-config.json'
+$emailCredentialPath = Join-Path $appDirectory 'email-credential.xml'
+$lastReportPath = Join-Path $appDirectory 'last-report.json'
 $catalogPath = Join-Path (Split-Path -Parent $PSCommandPath) 'error-catalog.json'
 $startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
 $scriptPath = $PSCommandPath
@@ -25,12 +32,115 @@ $script:minimumFreeMemoryMB = 1536
 
 New-Item -ItemType Directory -Path $appDirectory -Force | Out-Null
 
+function Read-EmailConfiguration {
+    if (-not (Test-Path -LiteralPath $emailConfigPath) -or -not (Test-Path -LiteralPath $emailCredentialPath)) {
+        return $null
+    }
+
+    try {
+        $config = Get-Content -LiteralPath $emailConfigPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if (-not $config.host -or -not $config.port -or -not $config.from -or -not $config.to) {
+            throw 'Email configuration is incomplete.'
+        }
+        $credential = Import-Clixml -LiteralPath $emailCredentialPath -ErrorAction Stop
+        if ($credential -isnot [System.Management.Automation.PSCredential]) {
+            throw 'The saved SMTP credential is invalid.'
+        }
+
+        return [pscustomobject]@{
+            Host = [string]$config.host
+            Port = [int]$config.port
+            From = [string]$config.from
+            To = [string]$config.to
+            Credential = $credential
+        }
+    }
+    catch {
+        Write-Error ('Could not load email configuration: {0}' -f $_.Exception.Message)
+    }
+}
+
+function Send-EmailMessage {
+    param(
+        [Parameter(Mandatory)]$Configuration,
+        [Parameter(Mandatory)][string]$Subject,
+        [Parameter(Mandatory)][string]$Body
+    )
+
+    $client = New-Object System.Net.Mail.SmtpClient($Configuration.Host, $Configuration.Port)
+    $message = New-Object System.Net.Mail.MailMessage($Configuration.From, $Configuration.To, $Subject, $Body)
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $client.EnableSsl = $true
+        $client.UseDefaultCredentials = $false
+        $client.Credentials = $Configuration.Credential.GetNetworkCredential()
+        $client.Timeout = 10000
+        $client.Send($message)
+    }
+    finally {
+        $message.Dispose()
+        $client.Dispose()
+    }
+}
+
+function Configure-Email {
+    $hostName = Read-Host 'SMTP server (for example, smtp.gmail.com)'
+    if ([string]::IsNullOrWhiteSpace($hostName)) {
+        throw 'SMTP server name cannot be empty.'
+    }
+    $portInput = Read-Host 'SMTP submission port (usually 587)'
+    $port = 0
+    if (-not [int]::TryParse($portInput, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
+        throw 'Enter a valid SMTP port between 1 and 65535.'
+    }
+
+    $sender = Read-Host 'Sender email address'
+    $recipient = Read-Host 'Report recipient email address'
+    [void](New-Object System.Net.Mail.MailAddress($sender))
+    [void](New-Object System.Net.Mail.MailAddress($recipient))
+    $credential = Get-Credential -Message 'Enter the SMTP username and app password. It is encrypted for this Windows user.'
+    if (-not $credential) {
+        throw 'Email setup was cancelled because no SMTP credential was provided.'
+    }
+
+    $config = [pscustomobject]@{
+        host = $hostName.Trim()
+        port = $port
+        from = $sender.Trim()
+        to = $recipient.Trim()
+    }
+    $config | ConvertTo-Json | Set-Content -LiteralPath $emailConfigPath -Encoding UTF8
+    $credential | Export-Clixml -LiteralPath $emailCredentialPath -Force
+    Write-Output ('Email settings saved under {0}. The credential is protected for this Windows user.' -f $appDirectory)
+
+    $answer = Read-Host 'Send a test email now? (Y/N)'
+    if ($answer -match '^(y|yes)$') {
+        $configuration = Read-EmailConfiguration
+        Send-EmailMessage -Configuration $configuration `
+            -Subject 'Mizuzaky System Inspector email test' `
+            -Body ('Email reporting is configured for computer {0} at {1}.' -f $env:COMPUTERNAME, (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+        Write-Output 'Test email sent successfully.'
+    }
+}
+
+if ($ConfigureEmail) {
+    try {
+        Configure-Email
+        exit 0
+    }
+    catch {
+        Write-Error ('Email setup failed: {0}' -f $_.Exception.Message)
+        exit 1
+    }
+}
+
 try {
     $catalog = Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-    if ($catalog.version -ne 1 -or -not $catalog.entries) {
+    if ($catalog.version -ne 1 -or -not $catalog.entries -or -not $catalog.safeRepairs) {
         throw 'The local error catalog has an unsupported format.'
     }
     $script:knowledgeEntries = @($catalog.entries)
+    $script:safeRepairs = @($catalog.safeRepairs)
 }
 catch {
     [void][System.Windows.MessageBox]::Show(
@@ -50,6 +160,74 @@ function Write-AssistantLog {
 
     if ($script:logText) {
         $script:logText.Text = (Get-Content -LiteralPath $logPath -Tail 6 -ErrorAction Stop) -join [Environment]::NewLine
+    }
+}
+
+function Send-HealthReport {
+    param([Parameter(Mandatory)][string[]]$Issues)
+
+    if ($Issues.Count -eq 0) {
+        if (Test-Path -LiteralPath $lastReportPath) {
+            Remove-Item -LiteralPath $lastReportPath -ErrorAction Stop
+        }
+        return
+    }
+
+    $reportText = $Issues -join [Environment]::NewLine
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $fingerprint = [Convert]::ToBase64String($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($reportText)))
+    }
+    finally {
+        $sha.Dispose()
+    }
+
+    if (Test-Path -LiteralPath $lastReportPath) {
+        $lastReport = Get-Content -LiteralPath $lastReportPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if ($lastReport.fingerprint -eq $fingerprint) {
+            Write-AssistantLog 'Email report skipped because the same issue report was already sent.'
+            return
+        }
+    }
+
+    try {
+        $configuration = Read-EmailConfiguration
+    }
+    catch {
+        Write-AssistantLog ('Email report could not load its local configuration: {0}' -f $_.Exception.Message)
+        $script:statusText.Text += [Environment]::NewLine + 'Email report could not load its local configuration.'
+        return
+    }
+    if (-not $configuration) {
+        Write-AssistantLog 'Email report not sent: configure an SMTP account with -ConfigureEmail.'
+        $script:statusText.Text += [Environment]::NewLine + 'Email is not configured. Run -ConfigureEmail to enable remote reports.'
+        return
+    }
+
+    $body = @(
+        'Mizuzaky System Inspector report'
+        ('Computer: {0}' -f $env:COMPUTERNAME)
+        ('Time: {0}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz'))
+        ''
+        'Findings:'
+        $reportText
+        ''
+        'Only the issue summary is included. Full Windows event messages are not sent.'
+    ) -join [Environment]::NewLine
+
+    try {
+        Send-EmailMessage -Configuration $configuration `
+            -Subject ('System health report from {0}' -f $env:COMPUTERNAME) `
+            -Body $body
+        [pscustomobject]@{
+            fingerprint = $fingerprint
+            sentAt = (Get-Date).ToString('o')
+        } | ConvertTo-Json | Set-Content -LiteralPath $lastReportPath -Encoding UTF8
+        Write-AssistantLog ('Email report sent to configured recipient {0}.' -f $configuration.To)
+    }
+    catch {
+        Write-AssistantLog ('Email report failed: {0}' -f $_.Exception.Message)
+        $script:statusText.Text += [Environment]::NewLine + ('Email report failed: {0}' -f $_.Exception.Message)
     }
 }
 
@@ -114,6 +292,7 @@ function Invoke-ScheduledHealthCheck {
     catch {
         $script:statusText.Text = 'Health check failed; see the local log for details.'
         Write-AssistantLog ('Health check failed: {0}' -f $_.Exception.Message)
+        Send-HealthReport -Issues @('Health check failed; details are recorded in the local log.')
     }
     finally {
         $script:checkTimer.Interval = [TimeSpan]::FromHours($script:checkIntervalHours)
@@ -143,19 +322,27 @@ function Invoke-HealthCheck {
         [void][System.Net.Dns]::GetHostAddresses('www.microsoft.com')
     }
     catch {
-        Write-AssistantLog ('DNS lookup failed; trying a non-destructive DNS cache flush: {0}' -f $_.Exception.Message)
+        $dnsError = $_.Exception.Message
+        $dnsRepair = $script:safeRepairs | Where-Object { $_.id -eq 'flush-dns-cache' } | Select-Object -First 1
+        Write-AssistantLog ('DNS lookup failed: {0}' -f $dnsError)
         try {
+            if (-not $dnsRepair -or $dnsRepair.action -ne 'FlushDnsCache' -or -not $dnsRepair.sourceUrl.StartsWith('https://learn.microsoft.com/', [StringComparison]::OrdinalIgnoreCase)) {
+                throw 'No approved Microsoft-sourced repair is configured for this issue.'
+            }
+
+            Test-NetworkConnection
             $flush = Start-Process -FilePath "$env:SystemRoot\System32\ipconfig.exe" `
                 -ArgumentList '/flushdns' -NoNewWindow -Wait -PassThru -ErrorAction Stop
             if ($flush.ExitCode -ne 0) {
                 throw ('ipconfig /flushdns exited with code {0}.' -f $flush.ExitCode)
             }
             [void][System.Net.Dns]::GetHostAddresses('www.microsoft.com')
-            Write-AssistantLog 'DNS cache flush succeeded; name resolution is working again.'
+            $issues.Add(('DNS lookup failed; the allowlisted DNS cache refresh succeeded. Source: {0}' -f $dnsRepair.sourceUrl))
+            Write-AssistantLog ('DNS cache refresh succeeded. Source: {0}' -f $dnsRepair.sourceUrl)
         }
         catch {
-            $issues.Add(('Network name lookup still fails after DNS cache repair: {0}' -f $_.Exception.Message))
-            Write-AssistantLog ('DNS repair did not resolve the issue: {0}' -f $_.Exception.Message)
+            $issues.Add(('DNS lookup failed and was not safely repaired: {0}. Manual guidance: {1}' -f $_.Exception.Message, $(if ($dnsRepair) { $dnsRepair.sourceUrl } else { 'No verified source is configured.' })))
+            Write-AssistantLog ('DNS repair was skipped or did not resolve the issue: {0}' -f $_.Exception.Message)
         }
     }
 
@@ -227,6 +414,8 @@ function Invoke-HealthCheck {
         $script:statusText.Text = $issues -join [Environment]::NewLine
         Write-AssistantLog ('Health check found {0} issue(s).' -f $issues.Count)
     }
+
+    Send-HealthReport -Issues @($issues.ToArray())
 }
 
 function Update-StartupButton {

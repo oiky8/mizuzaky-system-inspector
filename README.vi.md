@@ -11,11 +11,12 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 - Kiểm tra lần đầu khi khởi động ứng dụng, sau đó mỗi 3 giờ.
 - Hoãn kiểm tra 15 phút nếu CPU từ 70% trở lên hoặc RAM trống dưới 1,5 GB.
 - Chỉ đặt tiến trình của linh vật ở mức ưu tiên `BelowNormal`; không đóng hoặc thay đổi mức ưu tiên ứng dụng khác.
-- Thử làm mới bộ nhớ đệm DNS nếu phân giải tên miền thất bại. Đây là thao tác sửa tự động duy nhất trong bản thử nghiệm.
+- Có thể tự chạy một sửa chữa rủi ro thấp nằm trong danh sách cho phép: làm mới bộ nhớ đệm DNS nếu DNS lỗi trong khi kết nối trực tiếp bằng IP vẫn hoạt động. Ứng dụng dùng lệnh Windows `ipconfig` có tài liệu chính thức, kiểm tra lại kết quả và ghi nguồn Microsoft vào báo cáo.
+- Gửi báo cáo lỗi qua email khi đã cấu hình SMTP. Báo cáo chỉ chứa tóm tắt, không gửi nội dung đầy đủ của sự kiện Windows; lỗi không đổi sẽ không bị gửi lặp lại liên tục.
 - Chỉ mở tìm kiếm Microsoft Learn khi người dùng bấm nút. Ứng dụng chỉ gửi mã sự kiện chung, không gửi nội dung nhật ký.
 - Ghi nhật ký cục bộ tại `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Ứng dụng không tải hoặc chạy mã sửa lỗi từ kết quả trên mạng.
+Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Ứng dụng không tải hoặc chạy kết quả tìm kiếm hay mã sửa lỗi từ Internet. Lỗi chưa biết, rủi ro cao hoặc có thể ảnh hưởng thành phần khác sẽ chỉ được báo cáo để chủ máy xem xét.
 
 ## Yêu cầu
 
@@ -33,9 +34,21 @@ powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-
 
 Chọn **Start with Windows** trong ứng dụng để thêm hoặc gỡ shortcut ở Startup của người dùng hiện tại. Ứng dụng chạy sau khi người dùng đăng nhập, không chạy trước màn hình đăng nhập.
 
+## Báo cáo qua email
+
+Để cấu hình email, chạy script trong PowerShell tương tác:
+
+```powershell
+powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
+```
+
+Nhập máy chủ gửi SMTP, cổng (thường là 587), địa chỉ người gửi/người nhận và tên đăng nhập/mật khẩu ứng dụng SMTP. Nếu nhà cung cấp yêu cầu, hãy dùng mật khẩu ứng dụng. Mật khẩu được Windows DPAPI mã hóa cho tài khoản Windows hiện tại và lưu dưới `%LOCALAPPDATA%\MizuzakySystemInspector`, không nằm trong repository. Không dán thông tin đăng nhập vào mã nguồn hoặc commit lên GitHub. Trong lúc cấu hình, bạn có thể chọn gửi email thử.
+
+Email cần máy đang kết nối mạng và nhà cung cấp cho phép SMTP có xác thực. Ứng dụng chỉ gửi khi có phát hiện mới/thay đổi. Nếu chưa cấu hình hoặc gửi thất bại, ứng dụng sẽ báo cục bộ và ghi vào nhật ký.
+
 ## An toàn và giới hạn
 
-- Không tự động xóa tệp.
+- Không tự động xóa tệp người dùng. Sửa chữa tự động duy nhất là làm mới bộ nhớ đệm DNS có nguồn chính thức như mô tả ở trên.
 - Không sửa registry, đổi cài đặt bảo mật, cài/gỡ phần mềm, can thiệp tiến trình khác hoặc khởi động lại Windows.
 - Thiếu dung lượng và đa số lỗi hệ thống, driver, bảo mật, phần cứng hay ứng dụng chỉ được báo cáo, không tự sửa.
 - Mỗi nhật ký chỉ quét tối đa 100 sự kiện gần nhất và chỉ xét lỗi trong 24 giờ qua.

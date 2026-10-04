@@ -1,0 +1,10 @@
+# Local credentials and configuration must never be committed.
+email-config.json
+email-credential.xml
+*.credential.xml
+.env
+.env.*
+
+# Runtime output
+assistant.log
+last-report.json
