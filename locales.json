@@ -45,7 +45,10 @@
     "ReportFindings": "Findings:",
     "EmailStateUntrusted": "Email was not sent because its protected security state could not be verified.",
     "EmailStateWriteFailed": "The email was sent, but its protected anti-repeat state could not be saved.",
-    "ReportCount": "Issue count: {0}"
+    "ReportCount": "Issue count: {0}",
+    "FileWatchUnavailable": "Local file monitoring is unavailable; download and Git change coverage is off.",
+    "FileWatchCoverageWarning": "File monitoring may have missed changes. Results may be incomplete.",
+    "FileReviewFlagged": "Local review found potential risks in {0} file(s); see the local log. Nothing was changed."
   },
   "vi": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -93,7 +96,10 @@
     "ReportFindings": "Ph\u00e1t hi\u1ec7n:",
     "EmailStateUntrusted": "Kh\u00f4ng g\u1eedi email v\u00ec kh\u00f4ng th\u1ec3 x\u00e1c minh tr\u1ea1ng th\u00e1i b\u1ea3o m\u1eadt \u0111\u01b0\u1ee3c b\u1ea3o v\u1ec7.",
     "EmailStateWriteFailed": "\u0110\u00e3 g\u1eedi email nh\u01b0ng kh\u00f4ng l\u01b0u \u0111\u01b0\u1ee3c tr\u1ea1ng th\u00e1i ch\u1ed1ng g\u1eedi l\u1eb7p.",
-    "ReportCount": "S\u1ed1 l\u01b0\u1ee3ng v\u1ea5n \u0111\u1ec1: {0}"
+    "ReportCount": "S\u1ed1 l\u01b0\u1ee3ng v\u1ea5n \u0111\u1ec1: {0}",
+    "FileWatchUnavailable": "Kh\u00f4ng th\u1ec3 theo d\u00f5i t\u1ec7p c\u1ee5c b\u1ed9; kh\u00f4ng th\u1ec3 theo d\u00f5i t\u1ec7p t\u1ea3i v\u1ec1 v\u00e0 thay \u0111\u1ed5i Git.",
+    "FileWatchCoverageWarning": "C\u00f3 th\u1ec3 \u0111\u00e3 b\u1ecf l\u1ee1 m\u1ed9t s\u1ed1 thay \u0111\u1ed5i t\u1ec7p; k\u1ebft qu\u1ea3 c\u00f3 th\u1ec3 ch\u01b0a \u0111\u1ea7y \u0111\u1ee7.",
+    "FileReviewFlagged": "Ki\u1ec3m tra c\u1ee5c b\u1ed9 ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u r\u1ee7i ro trong {0} t\u1ec7p; xem nh\u1eadt k\u00fd c\u1ee5c b\u1ed9. Kh\u00f4ng c\u00f3 t\u1ec7p n\u00e0o b\u1ecb thay \u0111\u1ed5i."
   },
   "zh-CN": {
     "AppTitle": "Mizuzaky 系统检查员",
@@ -141,7 +147,10 @@
     "ReportFindings": "发现的问题：",
     "EmailStateUntrusted": "无法验证受保护的安全状态，因此未发送电子邮件。",
     "EmailStateWriteFailed": "邮件已发送，但无法保存防重复发送状态。",
-    "ReportCount": "问题数量：{0}"
+    "ReportCount": "问题数量：{0}",
+    "FileWatchUnavailable": "本地文件监控不可用；无法监控下载和 Git 变更。",
+    "FileWatchCoverageWarning": "文件监控可能遗漏了部分变更，结果可能不完整。",
+    "FileReviewFlagged": "本地检查在 {0} 个文件中发现潜在风险；请查看本地日志。文件未被修改。"
   },
   "zh-TW": {
     "AppTitle": "Mizuzaky 系統檢查員",
@@ -189,7 +198,10 @@
     "ReportFindings": "發現的問題：",
     "EmailStateUntrusted": "無法驗證受保護的安全狀態，因此未傳送電子郵件。",
     "EmailStateWriteFailed": "郵件已傳送，但無法儲存防止重複傳送的狀態。",
-    "ReportCount": "問題數量：{0}"
+    "ReportCount": "問題數量：{0}",
+    "FileWatchUnavailable": "本機檔案監控無法使用；無法監控下載和 Git 變更。",
+    "FileWatchCoverageWarning": "檔案監控可能遺漏部分變更，結果可能不完整。",
+    "FileReviewFlagged": "本機檢查在 {0} 個檔案中發現潛在風險；請查看本機記錄。檔案未被修改。"
   },
   "es": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -237,7 +249,10 @@
     "ReportFindings": "Incidencias:",
     "EmailStateUntrusted": "No se envió el correo porque no se pudo verificar el estado de seguridad protegido.",
     "EmailStateWriteFailed": "El correo se envió, pero no se pudo guardar el estado antirrepetición.",
-    "ReportCount": "Cantidad de incidencias: {0}"
+    "ReportCount": "Cantidad de incidencias: {0}",
+    "FileWatchUnavailable": "El monitor local no está disponible; no se supervisan las descargas ni los cambios de Git.",
+    "FileWatchCoverageWarning": "El monitor pudo omitir cambios. Los resultados pueden estar incompletos.",
+    "FileReviewFlagged": "La revisión local detectó riesgos potenciales en {0} archivo(s); consulta el registro local. No se modificó ningún archivo."
   },
   "fr": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -285,7 +300,10 @@
     "ReportFindings": "Résultats :",
     "EmailStateUntrusted": "E-mail non envoyé : impossible de vérifier l’état de sécurité protégé.",
     "EmailStateWriteFailed": "E-mail envoyé, mais impossible d’enregistrer l’état anti-répétition.",
-    "ReportCount": "Nombre de problèmes : {0}"
+    "ReportCount": "Nombre de problèmes : {0}",
+    "FileWatchUnavailable": "La surveillance locale des fichiers est indisponible ; les téléchargements et changements Git ne sont pas suivis.",
+    "FileWatchCoverageWarning": "La surveillance a peut-être manqué des changements. Les résultats peuvent être incomplets.",
+    "FileReviewFlagged": "L’analyse locale a signalé des risques potentiels dans {0} fichier(s) ; consultez le journal local. Aucun fichier n’a été modifié."
   },
   "de": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -333,7 +351,10 @@
     "ReportFindings": "Ergebnisse:",
     "EmailStateUntrusted": "E-Mail nicht gesendet: Der geschützte Sicherheitsstatus konnte nicht überprüft werden.",
     "EmailStateWriteFailed": "E-Mail gesendet, aber der Schutz vor Wiederholungen konnte nicht gespeichert werden.",
-    "ReportCount": "Anzahl der Probleme: {0}"
+    "ReportCount": "Anzahl der Probleme: {0}",
+    "FileWatchUnavailable": "Die lokale Dateiüberwachung ist nicht verfügbar; Downloads und Git-Änderungen werden nicht überwacht.",
+    "FileWatchCoverageWarning": "Die Dateiüberwachung hat möglicherweise Änderungen übersehen. Die Ergebnisse sind eventuell unvollständig.",
+    "FileReviewFlagged": "Die lokale Prüfung hat potenzielle Risiken in {0} Datei(en) gefunden; siehe lokales Protokoll. Es wurde nichts geändert."
   },
   "ja": {
     "AppTitle": "Mizuzaky システムインスペクター",
@@ -381,7 +402,10 @@
     "ReportFindings": "検出内容:",
     "EmailStateUntrusted": "保護されたセキュリティ状態を確認できないため、メールは送信されませんでした。",
     "EmailStateWriteFailed": "メールは送信されましたが、重複防止状態を保存できませんでした。",
-    "ReportCount": "問題数：{0}"
+    "ReportCount": "問題数：{0}",
+    "FileWatchUnavailable": "ローカルファイル監視を利用できません。ダウンロードと Git の変更は監視されません。",
+    "FileWatchCoverageWarning": "ファイルの変更を見逃した可能性があります。結果は不完全な場合があります。",
+    "FileReviewFlagged": "ローカル検査で {0} 個のファイルに潜在的なリスクが見つかりました。ローカルログを確認してください。ファイルは変更されていません。"
   },
   "ko": {
     "AppTitle": "Mizuzaky 시스템 검사기",
@@ -429,7 +453,10 @@
     "ReportFindings": "발견 항목:",
     "EmailStateUntrusted": "보호된 보안 상태를 확인할 수 없어 이메일을 보내지 않았습니다.",
     "EmailStateWriteFailed": "이메일은 전송했지만 중복 방지 상태를 저장하지 못했습니다.",
-    "ReportCount": "문제 수: {0}"
+    "ReportCount": "문제 수: {0}",
+    "FileWatchUnavailable": "로컬 파일 모니터링을 사용할 수 없어 다운로드와 Git 변경을 감시하지 않습니다.",
+    "FileWatchCoverageWarning": "일부 파일 변경을 놓쳤을 수 있습니다. 결과가 불완전할 수 있습니다.",
+    "FileReviewFlagged": "로컬 검사에서 {0}개 파일의 잠재적 위험을 발견했습니다. 로컬 로그를 확인하세요. 파일은 변경되지 않았습니다."
   },
   "pt": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -477,7 +504,10 @@
     "ReportFindings": "Problemas encontrados:",
     "EmailStateUntrusted": "E-mail não enviado porque não foi possível verificar o estado de segurança protegido.",
     "EmailStateWriteFailed": "E-mail enviado, mas não foi possível guardar o estado antirrepetição.",
-    "ReportCount": "Quantidade de problemas: {0}"
+    "ReportCount": "Quantidade de problemas: {0}",
+    "FileWatchUnavailable": "A monitorização local de ficheiros está indisponível; transferências e alterações do Git não são monitorizadas.",
+    "FileWatchCoverageWarning": "A monitorização pode ter perdido alterações. Os resultados podem estar incompletos.",
+    "FileReviewFlagged": "A análise local encontrou riscos potenciais em {0} ficheiro(s); consulte o registo local. Nada foi alterado."
   },
   "ru": {
     "AppTitle": "Mizuzaky — проверка системы",
@@ -525,7 +555,10 @@
     "ReportFindings": "Обнаруженные проблемы:",
     "EmailStateUntrusted": "Письмо не отправлено: не удалось проверить защищённое состояние безопасности.",
     "EmailStateWriteFailed": "Письмо отправлено, но не удалось сохранить состояние защиты от повторов.",
-    "ReportCount": "Количество проблем: {0}"
+    "ReportCount": "Количество проблем: {0}",
+    "FileWatchUnavailable": "Локальный мониторинг файлов недоступен; загрузки и изменения Git не отслеживаются.",
+    "FileWatchCoverageWarning": "Мониторинг мог пропустить изменения. Результаты могут быть неполными.",
+    "FileReviewFlagged": "Локальная проверка обнаружила потенциальные риски в файлах: {0}. См. локальный журнал. Файлы не изменялись."
   },
   "ar": {
     "AppTitle": "Mizuzaky لفحص النظام",
@@ -573,7 +606,10 @@
     "ReportFindings": "النتائج:",
     "EmailStateUntrusted": "لم يُرسل البريد لتعذّر التحقق من حالة الأمان المحمية.",
     "EmailStateWriteFailed": "أُرسل البريد، لكن تعذّر حفظ حالة منع التكرار.",
-    "ReportCount": "عدد المشكلات: {0}"
+    "ReportCount": "عدد المشكلات: {0}",
+    "FileWatchUnavailable": "مراقبة الملفات المحلية غير متاحة؛ لن تتم مراقبة التنزيلات وتغييرات Git.",
+    "FileWatchCoverageWarning": "قد تكون مراقبة الملفات قد فاتتها بعض التغييرات. قد تكون النتائج غير مكتملة.",
+    "FileReviewFlagged": "رصد الفحص المحلي مخاطر محتملة في {0} ملف. راجع السجل المحلي. لم يتم تغيير أي ملف."
   },
   "hi": {
     "AppTitle": "Mizuzaky सिस्टम निरीक्षक",
@@ -621,7 +657,10 @@
     "ReportFindings": "निष्कर्ष:",
     "EmailStateUntrusted": "सुरक्षित सुरक्षा स्थिति सत्यापित नहीं हो सकी, इसलिए ईमेल नहीं भेजा गया।",
     "EmailStateWriteFailed": "ईमेल भेजा गया, लेकिन दोहराव-रोधी स्थिति सहेजी नहीं जा सकी।",
-    "ReportCount": "समस्याओं की संख्या: {0}"
+    "ReportCount": "समस्याओं की संख्या: {0}",
+    "FileWatchUnavailable": "स्थानीय फ़ाइल निगरानी उपलब्ध नहीं है; डाउनलोड और Git बदलावों की निगरानी बंद है।",
+    "FileWatchCoverageWarning": "फ़ाइल निगरानी कुछ बदलाव चूक गई हो सकती है। परिणाम अधूरे हो सकते हैं।",
+    "FileReviewFlagged": "स्थानीय जाँच में {0} फ़ाइल(ों) में संभावित जोखिम मिले; स्थानीय लॉग देखें। कोई फ़ाइल बदली नहीं गई।"
   },
   "id": {
     "AppTitle": "Pemeriksa Sistem Mizuzaky",
@@ -669,7 +708,10 @@
     "ReportFindings": "Temuan:",
     "EmailStateUntrusted": "Email tidak dikirim karena status keamanan terlindungi tidak dapat diverifikasi.",
     "EmailStateWriteFailed": "Email terkirim, tetapi status pencegah pengulangan tidak dapat disimpan.",
-    "ReportCount": "Jumlah masalah: {0}"
+    "ReportCount": "Jumlah masalah: {0}",
+    "FileWatchUnavailable": "Pemantauan file lokal tidak tersedia; unduhan dan perubahan Git tidak dipantau.",
+    "FileWatchCoverageWarning": "Pemantauan file mungkin melewatkan perubahan. Hasilnya mungkin tidak lengkap.",
+    "FileReviewFlagged": "Pemeriksaan lokal menemukan potensi risiko pada {0} file; lihat log lokal. Tidak ada file yang diubah."
   },
   "th": {
     "AppTitle": "Mizuzaky ตัวตรวจสอบระบบ",
@@ -717,6 +759,9 @@
     "ReportFindings": "สิ่งที่พบ:",
     "EmailStateUntrusted": "ไม่ได้ส่งอีเมลเนื่องจากตรวจสอบสถานะความปลอดภัยที่ป้องกันไว้ไม่ได้",
     "EmailStateWriteFailed": "ส่งอีเมลแล้ว แต่บันทึกสถานะป้องกันการส่งซ้ำไม่ได้",
-    "ReportCount": "จำนวนปัญหา: {0}"
+    "ReportCount": "จำนวนปัญหา: {0}",
+    "FileWatchUnavailable": "ไม่มีการตรวจสอบไฟล์ในเครื่อง จึงไม่ติดตามไฟล์ดาวน์โหลดและการเปลี่ยนแปลงของ Git",
+    "FileWatchCoverageWarning": "การตรวจสอบไฟล์อาจพลาดบางการเปลี่ยนแปลง ผลลัพธ์อาจไม่ครบถ้วน",
+    "FileReviewFlagged": "การตรวจสอบในเครื่องพบความเสี่ยงที่อาจเกิดขึ้นใน {0} ไฟล์ โปรดดูบันทึกในเครื่อง ไม่มีการแก้ไขไฟล์"
   }
 }

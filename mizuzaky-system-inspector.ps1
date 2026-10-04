@@ -8,6 +8,171 @@ $ErrorActionPreference = 'Stop'
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Security
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+if (-not ('MizuzakyFileChangeMonitor' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using Microsoft.Win32.SafeHandles;
+
+public sealed class MizuzakyFileChangeMonitor : IDisposable
+{
+    private const int MaximumQueuedPaths = 2048;
+    private readonly ConcurrentQueue<string> paths = new ConcurrentQueue<string>();
+    private readonly ConcurrentDictionary<string, byte> queued =
+        new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+    private readonly List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
+    private int pendingCount;
+    private int overflowed;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern SafeFileHandle CreateFile(
+        string fileName,
+        uint desiredAccess,
+        uint shareMode,
+        IntPtr securityAttributes,
+        uint creationDisposition,
+        uint flagsAndAttributes,
+        IntPtr templateFile);
+
+    public int RootCount { get { return watchers.Count; } }
+
+    public void AddRoot(string path)
+    {
+        FileSystemWatcher watcher = new FileSystemWatcher(path);
+        try
+        {
+            watcher.IncludeSubdirectories = true;
+            watcher.NotifyFilter = NotifyFilters.FileName |
+                NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime;
+            watcher.InternalBufferSize = 16384;
+            watcher.Created += OnFileCreated;
+            watcher.Changed += OnFileChanged;
+            watcher.Renamed += OnFileRenamed;
+            watcher.Error += OnWatcherError;
+            watcher.EnableRaisingEvents = true;
+            watchers.Add(watcher);
+        }
+        catch
+        {
+            watcher.Dispose();
+            throw;
+        }
+    }
+
+    public bool TryDequeue(out string path)
+    {
+        if (!paths.TryDequeue(out path))
+            return false;
+
+        byte ignored;
+        queued.TryRemove(path, out ignored);
+        Interlocked.Decrement(ref pendingCount);
+        return true;
+    }
+
+    public bool ConsumeOverflow()
+    {
+        return Interlocked.Exchange(ref overflowed, 0) != 0;
+    }
+
+    private void OnFileCreated(object sender, FileSystemEventArgs args)
+    {
+        if (File.Exists(args.FullPath))
+            Enqueue(args.FullPath);
+    }
+
+    private void OnFileChanged(object sender, FileSystemEventArgs args)
+    {
+        string extension = Path.GetExtension(args.FullPath).ToLowerInvariant();
+        if (IsSourceFile(extension))
+        {
+            Enqueue(args.FullPath);
+            return;
+        }
+
+        int errorCode;
+        if (HasInternetZoneStream(args.FullPath, out errorCode))
+            Enqueue(args.FullPath);
+        else if (errorCode != 2 && errorCode != 3 && errorCode != 32)
+            Interlocked.Exchange(ref overflowed, 1);
+    }
+
+    private static bool HasInternetZoneStream(string path, out int errorCode)
+    {
+        using (SafeFileHandle handle = CreateFile(
+            path + ":Zone.Identifier",
+            0x80000000,
+            0x00000001 | 0x00000002 | 0x00000004,
+            IntPtr.Zero,
+            3,
+            0x00000080,
+            IntPtr.Zero))
+        {
+            errorCode = handle.IsInvalid ? Marshal.GetLastWin32Error() : 0;
+            return !handle.IsInvalid;
+        }
+    }
+
+    private static bool IsSourceFile(string extension)
+    {
+        return extension == ".ps1" || extension == ".psm1" || extension == ".psd1" ||
+            extension == ".bat" || extension == ".cmd" || extension == ".vbs" ||
+            extension == ".js" || extension == ".mjs" || extension == ".cjs" ||
+            extension == ".ts" || extension == ".tsx" || extension == ".jsx" ||
+            extension == ".py" || extension == ".rb" || extension == ".pl" ||
+            extension == ".php" || extension == ".java" || extension == ".kt" ||
+            extension == ".go" || extension == ".rs" || extension == ".c" ||
+            extension == ".h" || extension == ".cc" || extension == ".cpp" ||
+            extension == ".hpp" || extension == ".cs" || extension == ".fs" ||
+            extension == ".sh" || extension == ".lua" || extension == ".r" ||
+            extension == ".swift" || extension == ".sql" || extension == ".html" ||
+            extension == ".hta" || extension == ".yml" || extension == ".yaml" ||
+            extension == ".json" || extension == ".toml";
+    }
+
+    private void OnFileRenamed(object sender, RenamedEventArgs args)
+    {
+        if (File.Exists(args.FullPath))
+            Enqueue(args.FullPath);
+    }
+
+    private void OnWatcherError(object sender, ErrorEventArgs args)
+    {
+        Interlocked.Exchange(ref overflowed, 1);
+    }
+
+    public void Enqueue(string path)
+    {
+        if (!queued.TryAdd(path, 0))
+            return;
+
+        if (Interlocked.Increment(ref pendingCount) > MaximumQueuedPaths)
+        {
+            Interlocked.Decrement(ref pendingCount);
+            byte ignored;
+            queued.TryRemove(path, out ignored);
+            Interlocked.Exchange(ref overflowed, 1);
+            return;
+        }
+
+        paths.Enqueue(path);
+    }
+
+    public void Dispose()
+    {
+        foreach (FileSystemWatcher watcher in watchers)
+            watcher.Dispose();
+        watchers.Clear();
+    }
+}
+'@
+}
 
 $appDirectory = Join-Path $env:LOCALAPPDATA 'MizuzakySystemInspector'
 $logPath = Join-Path $appDirectory 'assistant.log'
@@ -25,6 +190,17 @@ $script:onlineSearchButton = $null
 $script:onlineSearchQuery = $null
 $script:knowledgeEntries = @()
 $script:checkTimer = $null
+$script:fileReviewTimer = $null
+$script:fileMonitor = $null
+$script:fileReviewObservations = @{}
+$script:fileReviewInspectedSignatures = @{}
+$script:fileReviewLastLoadCheck = [DateTime]::MinValue
+$script:fileReviewLoadBusy = $true
+$script:fileReviewFindingCount = 0
+$script:fileReviewUnreportedCount = 0
+$script:fileMonitorRoots = 0
+$script:fileMonitoringUnavailable = $false
+$script:fileMonitoringCoverageIncomplete = $false
 $script:prioritySet = $false
 $script:checkIntervalHours = 3
 $script:busyRetryMinutes = 15
@@ -383,6 +559,303 @@ function Write-AssistantLog {
     }
 }
 
+function Get-GitRepositoryRoot {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $directory = New-Object System.IO.DirectoryInfo([System.IO.Path]::GetDirectoryName($Path))
+    while ($directory) {
+        if (Test-Path -LiteralPath (Join-Path $directory.FullName '.git')) {
+            return $directory.FullName
+        }
+        $directory = $directory.Parent
+    }
+    return $null
+}
+
+function Get-CodeRiskFindings {
+    param([Parameter(Mandatory)][string]$Content)
+
+    $findings = New-Object System.Collections.Generic.List[string]
+    $networkPattern = '(?i)DownloadString|Invoke-WebRequest|Invoke-RestMethod|WebClient|requests\.(get|post)|urlopen|fetch\s*\(|curl\s|wget\s'
+    $executionPattern = '(?i)Invoke-Expression|\bIEX\b|\beval\s*\(|\bexec\s*\(|Start-Process|subprocess\.(run|Popen|call)|child_process\.(exec|spawn)'
+    if ($Content -match $networkPattern -and $Content -match $executionPattern) {
+        $findings.Add('network-and-dynamic-execution')
+    }
+    if ($Content -match '(?i)-EncodedCommand|FromBase64String|base64\.b64decode|Buffer\.from.{0,40}base64') {
+        $findings.Add('encoded-or-obfuscated-command')
+    }
+    if ($Content -match '(?i)DisableRealtimeMonitoring|Add-MpPreference.{0,100}Exclusion|Set-MpPreference.{0,100}Disable') {
+        $findings.Add('security-control-tampering')
+    }
+    return @($findings.ToArray())
+}
+
+function Read-LimitedStreamText {
+    param(
+        [Parameter(Mandatory)][System.IO.Stream]$Stream,
+        [Parameter(Mandatory)][int]$MaximumCharacters
+    )
+
+    $reader = New-Object System.IO.StreamReader($Stream, [Text.Encoding]::UTF8, $true, 4096, $true)
+    try {
+        $buffer = New-Object 'char[]' $MaximumCharacters
+        $length = $reader.Read($buffer, 0, $buffer.Length)
+        return [string]::new($buffer, 0, $length)
+    }
+    finally {
+        $reader.Dispose()
+    }
+}
+
+function Get-ZipCodeRiskFindings {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $findings = New-Object System.Collections.Generic.List[string]
+    $codeExtensions = @(
+        '.ps1', '.psm1', '.psd1', '.bat', '.cmd', '.vbs', '.js', '.mjs', '.cjs', '.ts',
+        '.tsx', '.jsx', '.py', '.rb', '.pl', '.php', '.java', '.kt', '.go', '.rs', '.c',
+        '.h', '.cc', '.cpp', '.hpp', '.cs', '.fs', '.sh', '.lua', '.r', '.swift', '.sql',
+        '.html', '.hta', '.yml', '.yaml', '.json', '.toml'
+    )
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($Path)
+    try {
+        $inspectedEntries = 0
+        $inspectedBytes = 0
+        foreach ($entry in $archive.Entries) {
+            if ($inspectedEntries -ge 50 -or $inspectedBytes -ge 5242880) {
+                break
+            }
+            if ($entry.FullName -match '(^|/)\.git(/|$)|(^|/)node_modules(/|$)' -or
+                [System.IO.Path]::GetExtension($entry.FullName).ToLowerInvariant() -notin $codeExtensions -or
+                $entry.Length -gt 262144) {
+                continue
+            }
+
+            $entryStream = $entry.Open()
+            try {
+                $content = Read-LimitedStreamText -Stream $entryStream -MaximumCharacters 262144
+            }
+            finally {
+                $entryStream.Dispose()
+            }
+            $inspectedEntries++
+            $inspectedBytes += $entry.Length
+            foreach ($finding in (Get-CodeRiskFindings -Content $content)) {
+                if (-not $findings.Contains($finding)) {
+                    $findings.Add($finding)
+                }
+            }
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+    return @($findings.ToArray())
+}
+
+function Get-MonitoredFileFindings {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return
+    }
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        return
+    }
+
+    $zoneStream = $null
+    try {
+        $zoneStream = Get-Item -LiteralPath $Path -Stream 'Zone.Identifier' -ErrorAction Stop
+    }
+    catch {
+        if ($_.FullyQualifiedErrorId -notlike 'AlternateDataStreamNotFound,*') {
+            throw
+        }
+    }
+    $downloadedFromInternet = $false
+    if ($zoneStream) {
+        $zoneText = Get-Content -LiteralPath $Path -Stream 'Zone.Identifier' -Raw -ErrorAction Stop
+        $downloadedFromInternet = $zoneText -match '(?m)^ZoneId=(3|4)\s*$'
+    }
+
+    $extension = [IO.Path]::GetExtension($Path).ToLowerInvariant()
+    $isCodeFile = $extension -in @(
+        '.ps1', '.psm1', '.psd1', '.bat', '.cmd', '.vbs', '.js', '.mjs', '.cjs', '.ts',
+        '.tsx', '.jsx', '.py', '.rb', '.pl', '.php', '.java', '.kt', '.go', '.rs', '.c',
+        '.h', '.cc', '.cpp', '.hpp', '.cs', '.fs', '.sh', '.lua', '.r', '.swift', '.sql',
+        '.html', '.hta', '.yml', '.yaml', '.json', '.toml'
+    )
+    $repositoryRoot = $null
+    if ($isCodeFile -and $Path -notmatch '(?i)(^|[\\/])\.git([\\/]|$)') {
+        $repositoryRoot = Get-GitRepositoryRoot -Path $Path
+    }
+    if (-not $downloadedFromInternet -and -not $repositoryRoot) {
+        return
+    }
+
+    $findings = New-Object System.Collections.Generic.List[string]
+    if ($downloadedFromInternet -and $extension -eq '.zip' -and $item.Length -le 52428800) {
+        foreach ($finding in (Get-ZipCodeRiskFindings -Path $Path)) {
+            $findings.Add($finding)
+        }
+    }
+    elseif ($isCodeFile -and $item.Length -le 262144) {
+        $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+        try {
+            $content = Read-LimitedStreamText -Stream $stream -MaximumCharacters 262144
+        }
+        finally {
+            $stream.Dispose()
+        }
+        foreach ($finding in (Get-CodeRiskFindings -Content $content)) {
+            $findings.Add($finding)
+        }
+    }
+    elseif ($downloadedFromInternet -and $item.Length -le 104857600 -and
+        $extension -in @('.exe', '.dll', '.msi', '.scr', '.com')) {
+        $signature = Get-AuthenticodeSignature -LiteralPath $Path -ErrorAction Stop
+        if ($signature.Status -in @('HashMismatch', 'NotTrusted', 'UnknownError')) {
+            $findings.Add('invalid-or-untrusted-authenticode-signature')
+        }
+    }
+
+    return [pscustomobject]@{
+        IsInternetDownload = $downloadedFromInternet
+        RepositoryRoot = $repositoryRoot
+        Findings = @($findings.ToArray())
+    }
+}
+
+function Start-LocalFileMonitoring {
+    $script:fileMonitor = New-Object MizuzakyFileChangeMonitor
+    $drives = @(Get-CimInstance -ClassName Win32_LogicalDisk -Filter 'DriveType=3' -ErrorAction Stop)
+    $ntfsDrives = @($drives | Where-Object { $_.FileSystem -eq 'NTFS' })
+    foreach ($drive in $drives) {
+        if ($drive.FileSystem -ne 'NTFS') {
+            continue
+        }
+        try {
+            $script:fileMonitor.AddRoot($drive.DeviceID + '\')
+            Write-AssistantLog ('Local NTFS file-change monitoring started for {0}.' -f $drive.DeviceID)
+        }
+        catch {
+            Write-AssistantLog ('Could not monitor local volume {0}: {1}' -f $drive.DeviceID, $_.Exception.Message)
+        }
+    }
+
+    $script:fileMonitorRoots = $script:fileMonitor.RootCount
+    if ($script:fileMonitorRoots -eq 0) {
+        $script:fileMonitoringUnavailable = $true
+        $script:statusText.Text = Get-Text 'FileWatchUnavailable'
+        Write-AssistantLog 'No local NTFS volume could be monitored for file changes.'
+        return
+    }
+    if ($script:fileMonitorRoots -lt $ntfsDrives.Count) {
+        $script:fileMonitoringCoverageIncomplete = $true
+        $script:statusText.Text = Get-Text 'FileWatchCoverageWarning'
+    }
+
+    Write-AssistantLog ('Monitoring file changes on {0} local NTFS volume(s). Only file changes observed after startup are reviewed; no file contents are uploaded or executed.' -f $script:fileMonitorRoots)
+    $script:fileReviewTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:fileReviewTimer.Interval = [TimeSpan]::FromSeconds(2)
+    $script:fileReviewTimer.Add_Tick({ Invoke-PendingFileReview })
+    $script:fileReviewTimer.Start()
+}
+
+function Invoke-PendingFileReview {
+    if (-not $script:fileMonitor) {
+        return
+    }
+
+    if ($script:fileMonitor.ConsumeOverflow()) {
+        $script:fileMonitoringCoverageIncomplete = $true
+        $script:statusText.Text = Get-Text 'FileWatchCoverageWarning'
+        Write-AssistantLog 'File monitoring reported a notification or queue overflow; some changes may have been missed.'
+    }
+
+    if (([DateTime]::Now - $script:fileReviewLastLoadCheck) -ge [TimeSpan]::FromSeconds(15)) {
+        $script:fileReviewLastLoadCheck = [DateTime]::Now
+        try {
+            $load = Get-SystemLoad
+            $script:fileReviewLoadBusy = $load.CpuPercent -ge $script:busyCpuThreshold -or
+                $load.FreeMemoryMB -lt $script:minimumFreeMemoryMB
+        }
+        catch {
+            $script:fileReviewLoadBusy = $true
+            Write-AssistantLog ('File review paused because system load could not be measured: {0}' -f $_.Exception.Message)
+        }
+    }
+    if ($script:fileReviewLoadBusy) {
+        return
+    }
+
+    for ($index = 0; $index -lt 2; $index++) {
+        $path = $null
+        if (-not $script:fileMonitor.TryDequeue([ref]$path)) {
+            break
+        }
+        try {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                [void]$script:fileReviewObservations.Remove($path)
+                continue
+            }
+            $item = Get-Item -LiteralPath $path -Force -ErrorAction Stop
+            $signature = '{0}|{1}' -f $item.Length, $item.LastWriteTimeUtc.Ticks
+            if (-not $script:fileReviewObservations.ContainsKey($path) -or
+                $script:fileReviewObservations[$path].Signature -ne $signature) {
+                $attempts = 1
+                if ($script:fileReviewObservations.ContainsKey($path)) {
+                    $attempts = $script:fileReviewObservations[$path].Attempts + 1
+                }
+                if ($attempts -ge 6) {
+                    [void]$script:fileReviewObservations.Remove($path)
+                    Write-AssistantLog ('File review skipped a file that kept changing: {0}' -f $path)
+                    $script:fileMonitoringCoverageIncomplete = $true
+                    $script:statusText.Text = Get-Text 'FileWatchCoverageWarning'
+                    continue
+                }
+                $script:fileReviewObservations[$path] = @{
+                    Signature = $signature
+                    Attempts = $attempts
+                    ObservedAt = [DateTime]::Now
+                }
+                $script:fileMonitor.Enqueue($path)
+                continue
+            }
+            if (([DateTime]::Now - $script:fileReviewObservations[$path].ObservedAt) -lt [TimeSpan]::FromSeconds(2)) {
+                $script:fileMonitor.Enqueue($path)
+                continue
+            }
+            [void]$script:fileReviewObservations.Remove($path)
+            if ($script:fileReviewInspectedSignatures.ContainsKey($path) -and
+                $script:fileReviewInspectedSignatures[$path] -eq $signature) {
+                continue
+            }
+
+            $review = Get-MonitoredFileFindings -Path $path
+            if (-not $review) {
+                continue
+            }
+            if ($script:fileReviewInspectedSignatures.Count -ge 4096) {
+                $script:fileReviewInspectedSignatures.Clear()
+            }
+            $script:fileReviewInspectedSignatures[$path] = $signature
+            if ($review.Findings.Count -gt 0) {
+                $script:fileReviewFindingCount++
+                $script:fileReviewUnreportedCount++
+                $findingSummary = $review.Findings -join ', '
+                Write-AssistantLog ('Static review heuristic flagged {0}: {1}' -f $path, $findingSummary)
+                $script:statusText.Text = (Get-Text 'FileReviewFlagged') -f $script:fileReviewFindingCount
+            }
+        }
+        catch {
+            [void]$script:fileReviewObservations.Remove($path)
+            Write-AssistantLog ('Could not review monitored file {0}: {1}' -f $path, $_.Exception.Message)
+        }
+    }
+}
+
 function Read-ProtectedReportState {
     if (-not (Test-Path -LiteralPath $lastReportPath)) {
         return $null
@@ -413,7 +886,7 @@ function Read-ProtectedReportState {
         }
     }
     finally {
-        if ($null -ne $plainBytes) {
+        if ($plainBytes) {
             [Array]::Clear($plainBytes, 0, $plainBytes.Length)
         }
         [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
@@ -445,7 +918,7 @@ function Write-ProtectedReportState {
     }
     finally {
         [Array]::Clear($plainBytes, 0, $plainBytes.Length)
-        if ($null -ne $protectedBytes) {
+        if ($protectedBytes) {
             [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
         }
     }
@@ -739,6 +1212,11 @@ function Invoke-HealthCheck {
         Write-AssistantLog ('Internet connection test failed: {0}' -f $_.Exception.Message)
     }
 
+    if ($script:fileReviewUnreportedCount -gt 0) {
+        $issues.Add(((Get-Text 'FileReviewFlagged') -f $script:fileReviewUnreportedCount))
+        $script:fileReviewUnreportedCount = 0
+    }
+
     if ($issues.Count -eq 0) {
         $script:statusText.Text = Get-Text 'AllGood'
         Write-AssistantLog 'Health check completed: no issues detected.'
@@ -755,6 +1233,13 @@ function Invoke-HealthCheck {
     }
     else {
         Write-AssistantLog 'No supported programming runtimes were detected on PATH.'
+    }
+
+    if ($script:fileMonitoringUnavailable) {
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'FileWatchUnavailable')
+    }
+    elseif ($script:fileMonitoringCoverageIncomplete) {
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'FileWatchCoverageWarning')
     }
 
     Send-HealthReport -Issues @($issues.ToArray())
@@ -940,11 +1425,28 @@ finally {
     $process.Dispose()
 }
 
+try {
+    Start-LocalFileMonitoring
+}
+catch {
+    $script:fileMonitoringUnavailable = $true
+    $script:statusText.Text = Get-Text 'FileWatchUnavailable'
+    Write-AssistantLog ('Could not start local file monitoring: {0}' -f $_.Exception.Message)
+}
+
 $script:checkTimer = New-Object System.Windows.Threading.DispatcherTimer
 $script:checkTimer.Interval = [TimeSpan]::FromHours($script:checkIntervalHours)
 $script:checkTimer.Add_Tick({ Invoke-ScheduledHealthCheck })
 $script:checkTimer.Start()
 
-$window.Add_Closed({ $script:checkTimer.Stop() })
+$window.Add_Closed({
+    $script:checkTimer.Stop()
+    if ($script:fileReviewTimer) {
+        $script:fileReviewTimer.Stop()
+    }
+    if ($script:fileMonitor) {
+        $script:fileMonitor.Dispose()
+    }
+})
 $window.Add_ContentRendered({ Invoke-ScheduledHealthCheck })
 [void]$window.ShowDialog()

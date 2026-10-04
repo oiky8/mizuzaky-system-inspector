@@ -9,7 +9,8 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 - Checks local disk space, DNS resolution, and Internet connectivity.
 - Reviews recent error events from the Windows **System** and **Application** logs against [`error-catalog.json`](./error-catalog.json).
 - Selects Vietnamese, Simplified or Traditional Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Russian, Arabic, Hindi, Indonesian, or Thai from the Windows UI language; other languages fall back to English. Arabic uses right-to-left layout. UI strings are kept in [`locales.json`](./locales.json) for future translations.
-- Detects common toolchains available on `PATH`: Python, Node.js (JavaScript/TypeScript), Java, .NET (including C#), Go, Rust, PHP, Ruby, Perl, Lua, R, Swift, and C/C++. It reports matching recent Windows application-crash events without running runtimes, scanning projects, or reading source code.
+- Detects common toolchains available on `PATH`: Python, Node.js (JavaScript/TypeScript), Java, .NET (including C#), Go, Rust, PHP, Ruby, Perl, Lua, R, Swift, and C/C++. It reports matching recent Windows application-crash events without running runtimes.
+- Watches file changes on local NTFS volumes while the app is running. Files marked by Windows as downloaded from the Internet are checked for that origin; supported executable files also have their Authenticode signature status checked. Changed source files inside Git working trees are inspected for a short allowlist of risky code patterns. Small source files in marked ZIP downloads are inspected without extracting them. Only heuristic matches are reported; no file is changed, executed, quarantined, or uploaded.
 - Runs an initial check at startup, then checks every three hours.
 - Defers checks for 15 minutes when CPU usage is at least 70% or free memory is below 1.5 GB.
 - Sets only its own process priority to `BelowNormal`; it does not close or reprioritize other applications.
@@ -18,7 +19,7 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 - Opens a Microsoft Learn search only when the user clicks the search button. It sends a generic event identifier, not event log contents.
 - Writes a local log to `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-The error catalog is an editable starter set, not a comprehensive knowledge base. It has localized descriptions for the supported UI languages. Programming-language support is limited to the listed toolchains and crash events Windows records; no finite app can identify every programming language, and this is not a compiler, debugger, or project scanner. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
+The error catalog is an editable starter set, not a comprehensive knowledge base. File review is a lightweight static heuristic, not antivirus, a full security audit, or proof that a file is safe; Windows Defender or another reputable antivirus is still required. A valid Authenticode signature does not prove software is safe, and unsigned software is not automatically malicious. Monitoring starts when the app starts and is limited to local NTFS volumes. It does not cover network/removable/non-NTFS volumes, files already present at startup, or downloads that Windows does not mark with Internet Zone information. Git source is reviewed only when a file change is observed while the app is running; notification overflow or high system load can delay or miss reviews. Source files over 256 KB, executable signature checks over 100 MB, and ZIP archives over 50 MB are skipped; ZIP inspection is limited to 50 small source entries. No source text is included in email; email reports remain count-only. Programming-language runtime detection is limited to the listed toolchains and crash events Windows records. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
 
 ## Requirements
 
@@ -53,6 +54,7 @@ These controls protect data from other local accounts and insecure transport. Th
 ## Safety and limitations
 
 - No user files are automatically deleted. The sole automatic repair is the documented DNS-cache refresh described above.
+- File monitoring reads only local file metadata and supported source text for static heuristics. It never runs, deletes, or quarantines files and does not upload source code. Heuristic results can have false positives and false negatives.
 - The app does not edit the registry, alter security settings, install or uninstall software, change other processes, or restart Windows.
 - Low disk space and most system, driver, security, hardware, and application errors are reported, not automatically repaired.
 - Event scanning is limited to up to 100 recent events per log and only considers errors from the last 24 hours.
