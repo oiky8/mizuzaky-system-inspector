@@ -36,13 +36,16 @@
     "EmailReportSubject": "System health report from {0}",
     "EmailReportPrivacy": "Only concise findings are included. Full Windows event messages and source code are not sent.",
     "EmailSetupHost": "SMTP server (for example, smtp.gmail.com)",
-    "EmailSetupPort": "SMTP submission port (usually 587)",
+    "EmailSetupPort": "SMTP submission port (587 only)",
     "EmailSetupSender": "Sender email address",
     "EmailSetupRecipient": "Report recipient email address",
     "EmailTestPrompt": "Send a test email now? (Y/N)",
     "ReportComputer": "Computer: {0}",
     "ReportTime": "Time: {0}",
-    "ReportFindings": "Findings:"
+    "ReportFindings": "Findings:",
+    "EmailStateUntrusted": "Email was not sent because its protected security state could not be verified.",
+    "EmailStateWriteFailed": "The email was sent, but its protected anti-repeat state could not be saved.",
+    "ReportCount": "Issue count: {0}"
   },
   "vi": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -81,13 +84,16 @@
     "EmailReportSubject": "B\u00e1o c\u00e1o t\u00ecnh tr\u1ea1ng m\u00e1y t\u1eeb {0}",
     "EmailReportPrivacy": "Ch\u1ec9 g\u1eedi t\u00f3m t\u1eaft; kh\u00f4ng g\u1eedi nh\u1eadt k\u00fd Windows \u0111\u1ea7y \u0111\u1ee7 ho\u1eb7c m\u00e3 ngu\u1ed3n.",
     "EmailSetupHost": "M\u00e1y ch\u1ee7 SMTP (v\u00ed d\u1ee5: smtp.gmail.com)",
-    "EmailSetupPort": "C\u1ed5ng SMTP (th\u01b0\u1eddng l\u00e0 587)",
+    "EmailSetupPort": "C\u1ed5ng SMTP (ch\u1ec9 d\u00f9ng 587)",
     "EmailSetupSender": "\u0110\u1ecba ch\u1ec9 email ng\u01b0\u1eddi g\u1eedi",
     "EmailSetupRecipient": "\u0110\u1ecba ch\u1ec9 email nh\u1eadn b\u00e1o c\u00e1o",
     "EmailTestPrompt": "G\u1eedi email th\u1eed ngay? (Y/N)",
     "ReportComputer": "M\u00e1y t\u00ednh: {0}",
     "ReportTime": "Th\u1eddi gian: {0}",
-    "ReportFindings": "Ph\u00e1t hi\u1ec7n:"
+    "ReportFindings": "Ph\u00e1t hi\u1ec7n:",
+    "EmailStateUntrusted": "Kh\u00f4ng g\u1eedi email v\u00ec kh\u00f4ng th\u1ec3 x\u00e1c minh tr\u1ea1ng th\u00e1i b\u1ea3o m\u1eadt \u0111\u01b0\u1ee3c b\u1ea3o v\u1ec7.",
+    "EmailStateWriteFailed": "\u0110\u00e3 g\u1eedi email nh\u01b0ng kh\u00f4ng l\u01b0u \u0111\u01b0\u1ee3c tr\u1ea1ng th\u00e1i ch\u1ed1ng g\u1eedi l\u1eb7p.",
+    "ReportCount": "S\u1ed1 l\u01b0\u1ee3ng v\u1ea5n \u0111\u1ec1: {0}"
   },
   "zh-CN": {
     "AppTitle": "Mizuzaky 系统检查员",
@@ -126,13 +132,16 @@
     "EmailReportSubject": "来自 {0} 的系统健康报告",
     "EmailReportPrivacy": "报告仅包含简要问题；不会发送完整的 Windows 事件日志或源代码。",
     "EmailSetupHost": "SMTP 服务器（例如 smtp.gmail.com）",
-    "EmailSetupPort": "SMTP 提交端口（通常为 587）",
+    "EmailSetupPort": "SMTP 提交端口（仅限 587）",
     "EmailSetupSender": "发件人电子邮件地址",
     "EmailSetupRecipient": "报告接收者电子邮件地址",
     "EmailTestPrompt": "现在发送测试邮件吗？（Y/N）",
     "ReportComputer": "电脑：{0}",
     "ReportTime": "时间：{0}",
-    "ReportFindings": "发现的问题："
+    "ReportFindings": "发现的问题：",
+    "EmailStateUntrusted": "无法验证受保护的安全状态，因此未发送电子邮件。",
+    "EmailStateWriteFailed": "邮件已发送，但无法保存防重复发送状态。",
+    "ReportCount": "问题数量：{0}"
   },
   "zh-TW": {
     "AppTitle": "Mizuzaky 系統檢查員",
@@ -171,13 +180,16 @@
     "EmailReportSubject": "來自 {0} 的系統健康報告",
     "EmailReportPrivacy": "報告僅包含簡要問題；不會傳送完整的 Windows 事件記錄或原始碼。",
     "EmailSetupHost": "SMTP 伺服器（例如 smtp.gmail.com）",
-    "EmailSetupPort": "SMTP 提交連接埠（通常為 587）",
+    "EmailSetupPort": "SMTP 提交連接埠（僅限 587）",
     "EmailSetupSender": "寄件者電子郵件地址",
     "EmailSetupRecipient": "報告收件者電子郵件地址",
     "EmailTestPrompt": "現在傳送測試郵件嗎？（Y/N）",
     "ReportComputer": "電腦：{0}",
     "ReportTime": "時間：{0}",
-    "ReportFindings": "發現的問題："
+    "ReportFindings": "發現的問題：",
+    "EmailStateUntrusted": "無法驗證受保護的安全狀態，因此未傳送電子郵件。",
+    "EmailStateWriteFailed": "郵件已傳送，但無法儲存防止重複傳送的狀態。",
+    "ReportCount": "問題數量：{0}"
   },
   "es": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -216,13 +228,16 @@
     "EmailReportSubject": "Informe del estado del sistema de {0}",
     "EmailReportPrivacy": "Solo se incluyen resúmenes. No se envían registros completos de Windows ni código fuente.",
     "EmailSetupHost": "Servidor SMTP (por ejemplo, smtp.gmail.com)",
-    "EmailSetupPort": "Puerto de envío SMTP (normalmente 587)",
+    "EmailSetupPort": "Puerto de envío SMTP (solo 587)",
     "EmailSetupSender": "Dirección de correo del remitente",
     "EmailSetupRecipient": "Dirección de correo del destinatario",
     "EmailTestPrompt": "¿Enviar un correo de prueba ahora? (S/N)",
     "ReportComputer": "Equipo: {0}",
     "ReportTime": "Hora: {0}",
-    "ReportFindings": "Incidencias:"
+    "ReportFindings": "Incidencias:",
+    "EmailStateUntrusted": "No se envió el correo porque no se pudo verificar el estado de seguridad protegido.",
+    "EmailStateWriteFailed": "El correo se envió, pero no se pudo guardar el estado antirrepetición.",
+    "ReportCount": "Cantidad de incidencias: {0}"
   },
   "fr": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -261,13 +276,16 @@
     "EmailReportSubject": "Rapport sur l’état du système de {0}",
     "EmailReportPrivacy": "Seuls des résumés sont inclus. Les journaux Windows complets et le code source ne sont pas envoyés.",
     "EmailSetupHost": "Serveur SMTP (par exemple, smtp.gmail.com)",
-    "EmailSetupPort": "Port d’envoi SMTP (généralement 587)",
+    "EmailSetupPort": "Port d’envoi SMTP (587 uniquement)",
     "EmailSetupSender": "Adresse e-mail de l’expéditeur",
     "EmailSetupRecipient": "Adresse e-mail du destinataire du rapport",
     "EmailTestPrompt": "Envoyer un e-mail de test maintenant ? (O/N)",
     "ReportComputer": "Ordinateur : {0}",
     "ReportTime": "Heure : {0}",
-    "ReportFindings": "Résultats :"
+    "ReportFindings": "Résultats :",
+    "EmailStateUntrusted": "E-mail non envoyé : impossible de vérifier l’état de sécurité protégé.",
+    "EmailStateWriteFailed": "E-mail envoyé, mais impossible d’enregistrer l’état anti-répétition.",
+    "ReportCount": "Nombre de problèmes : {0}"
   },
   "de": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -306,13 +324,16 @@
     "EmailReportSubject": "Systemzustandsbericht von {0}",
     "EmailReportPrivacy": "Es werden nur kurze Zusammenfassungen gesendet. Vollständige Windows-Protokolle und Quellcode werden nicht gesendet.",
     "EmailSetupHost": "SMTP-Server (zum Beispiel smtp.gmail.com)",
-    "EmailSetupPort": "SMTP-Übermittlungsport (normalerweise 587)",
+    "EmailSetupPort": "SMTP-Übermittlungsport (nur 587)",
     "EmailSetupSender": "E-Mail-Adresse des Absenders",
     "EmailSetupRecipient": "E-Mail-Adresse des Berichtsempfängers",
     "EmailTestPrompt": "Jetzt eine Test-E-Mail senden? (J/N)",
     "ReportComputer": "Computer: {0}",
     "ReportTime": "Zeit: {0}",
-    "ReportFindings": "Ergebnisse:"
+    "ReportFindings": "Ergebnisse:",
+    "EmailStateUntrusted": "E-Mail nicht gesendet: Der geschützte Sicherheitsstatus konnte nicht überprüft werden.",
+    "EmailStateWriteFailed": "E-Mail gesendet, aber der Schutz vor Wiederholungen konnte nicht gespeichert werden.",
+    "ReportCount": "Anzahl der Probleme: {0}"
   },
   "ja": {
     "AppTitle": "Mizuzaky システムインスペクター",
@@ -351,13 +372,16 @@
     "EmailReportSubject": "{0} からのシステム状態レポート",
     "EmailReportPrivacy": "簡潔な問題の概要のみを含みます。Windows の完全なイベントログやソースコードは送信しません。",
     "EmailSetupHost": "SMTP サーバー（例: smtp.gmail.com）",
-    "EmailSetupPort": "SMTP 送信ポート（通常 587）",
+    "EmailSetupPort": "SMTP 送信ポート（587 のみ）",
     "EmailSetupSender": "送信元メールアドレス",
     "EmailSetupRecipient": "レポートの送信先メールアドレス",
     "EmailTestPrompt": "テストメールを今すぐ送信しますか？（Y/N）",
     "ReportComputer": "コンピューター: {0}",
     "ReportTime": "時刻: {0}",
-    "ReportFindings": "検出内容:"
+    "ReportFindings": "検出内容:",
+    "EmailStateUntrusted": "保護されたセキュリティ状態を確認できないため、メールは送信されませんでした。",
+    "EmailStateWriteFailed": "メールは送信されましたが、重複防止状態を保存できませんでした。",
+    "ReportCount": "問題数：{0}"
   },
   "ko": {
     "AppTitle": "Mizuzaky 시스템 검사기",
@@ -396,13 +420,16 @@
     "EmailReportSubject": "{0}의 시스템 상태 보고서",
     "EmailReportPrivacy": "간략한 문제 요약만 포함됩니다. 전체 Windows 이벤트 로그와 소스 코드는 전송되지 않습니다.",
     "EmailSetupHost": "SMTP 서버(예: smtp.gmail.com)",
-    "EmailSetupPort": "SMTP 제출 포트(일반적으로 587)",
+    "EmailSetupPort": "SMTP 제출 포트(587만 가능)",
     "EmailSetupSender": "보내는 사람 이메일 주소",
     "EmailSetupRecipient": "보고서 받는 사람 이메일 주소",
     "EmailTestPrompt": "지금 테스트 이메일을 보낼까요? (Y/N)",
     "ReportComputer": "컴퓨터: {0}",
     "ReportTime": "시간: {0}",
-    "ReportFindings": "발견 항목:"
+    "ReportFindings": "발견 항목:",
+    "EmailStateUntrusted": "보호된 보안 상태를 확인할 수 없어 이메일을 보내지 않았습니다.",
+    "EmailStateWriteFailed": "이메일은 전송했지만 중복 방지 상태를 저장하지 못했습니다.",
+    "ReportCount": "문제 수: {0}"
   },
   "pt": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -441,13 +468,16 @@
     "EmailReportSubject": "Relatório de estado do sistema de {0}",
     "EmailReportPrivacy": "Inclui apenas resumos breves. Não são enviados registos completos do Windows nem código-fonte.",
     "EmailSetupHost": "Servidor SMTP (por exemplo, smtp.gmail.com)",
-    "EmailSetupPort": "Porta de envio SMTP (normalmente 587)",
+    "EmailSetupPort": "Porta de envio SMTP (somente 587)",
     "EmailSetupSender": "Endereço de e-mail do remetente",
     "EmailSetupRecipient": "Endereço de e-mail do destinatário do relatório",
     "EmailTestPrompt": "Enviar um e-mail de teste agora? (S/N)",
     "ReportComputer": "Computador: {0}",
     "ReportTime": "Hora: {0}",
-    "ReportFindings": "Problemas encontrados:"
+    "ReportFindings": "Problemas encontrados:",
+    "EmailStateUntrusted": "E-mail não enviado porque não foi possível verificar o estado de segurança protegido.",
+    "EmailStateWriteFailed": "E-mail enviado, mas não foi possível guardar o estado antirrepetição.",
+    "ReportCount": "Quantidade de problemas: {0}"
   },
   "ru": {
     "AppTitle": "Mizuzaky — проверка системы",
@@ -486,13 +516,16 @@
     "EmailReportSubject": "Отчёт о состоянии системы компьютера {0}",
     "EmailReportPrivacy": "В отчёт включены только краткие сведения. Полные журналы Windows и исходный код не отправляются.",
     "EmailSetupHost": "SMTP-сервер (например, smtp.gmail.com)",
-    "EmailSetupPort": "Порт отправки SMTP (обычно 587)",
+    "EmailSetupPort": "Порт отправки SMTP (только 587)",
     "EmailSetupSender": "Адрес электронной почты отправителя",
     "EmailSetupRecipient": "Адрес получателя отчёта",
     "EmailTestPrompt": "Отправить тестовое письмо сейчас? (Д/Н)",
     "ReportComputer": "Компьютер: {0}",
     "ReportTime": "Время: {0}",
-    "ReportFindings": "Обнаруженные проблемы:"
+    "ReportFindings": "Обнаруженные проблемы:",
+    "EmailStateUntrusted": "Письмо не отправлено: не удалось проверить защищённое состояние безопасности.",
+    "EmailStateWriteFailed": "Письмо отправлено, но не удалось сохранить состояние защиты от повторов.",
+    "ReportCount": "Количество проблем: {0}"
   },
   "ar": {
     "AppTitle": "Mizuzaky لفحص النظام",
@@ -531,13 +564,16 @@
     "EmailReportSubject": "تقرير حالة النظام من {0}",
     "EmailReportPrivacy": "يتضمن التقرير ملخصات موجزة فقط. لن يتم إرسال سجلات Windows الكاملة أو الشفرة المصدرية.",
     "EmailSetupHost": "خادم SMTP (مثل smtp.gmail.com)",
-    "EmailSetupPort": "منفذ إرسال SMTP (عادةً 587)",
+    "EmailSetupPort": "منفذ إرسال SMTP (587 فقط)",
     "EmailSetupSender": "عنوان البريد الإلكتروني للمرسل",
     "EmailSetupRecipient": "عنوان البريد الإلكتروني لمستلم التقرير",
     "EmailTestPrompt": "هل تريد إرسال بريد تجريبي الآن؟ (Y/N)",
     "ReportComputer": "الجهاز: {0}",
     "ReportTime": "الوقت: {0}",
-    "ReportFindings": "النتائج:"
+    "ReportFindings": "النتائج:",
+    "EmailStateUntrusted": "لم يُرسل البريد لتعذّر التحقق من حالة الأمان المحمية.",
+    "EmailStateWriteFailed": "أُرسل البريد، لكن تعذّر حفظ حالة منع التكرار.",
+    "ReportCount": "عدد المشكلات: {0}"
   },
   "hi": {
     "AppTitle": "Mizuzaky सिस्टम निरीक्षक",
@@ -576,13 +612,16 @@
     "EmailReportSubject": "{0} से सिस्टम स्वास्थ्य रिपोर्ट",
     "EmailReportPrivacy": "इसमें केवल संक्षिप्त निष्कर्ष हैं। Windows के पूरे इवेंट लॉग या सोर्स कोड नहीं भेजे जाते।",
     "EmailSetupHost": "SMTP सर्वर (उदाहरण: smtp.gmail.com)",
-    "EmailSetupPort": "SMTP भेजने का पोर्ट (आमतौर पर 587)",
+    "EmailSetupPort": "SMTP भेजने का पोर्ट (केवल 587)",
     "EmailSetupSender": "भेजने वाले का ईमेल पता",
     "EmailSetupRecipient": "रिपोर्ट प्राप्तकर्ता का ईमेल पता",
     "EmailTestPrompt": "क्या अभी परीक्षण ईमेल भेजें? (Y/N)",
     "ReportComputer": "कंप्यूटर: {0}",
     "ReportTime": "समय: {0}",
-    "ReportFindings": "निष्कर्ष:"
+    "ReportFindings": "निष्कर्ष:",
+    "EmailStateUntrusted": "सुरक्षित सुरक्षा स्थिति सत्यापित नहीं हो सकी, इसलिए ईमेल नहीं भेजा गया।",
+    "EmailStateWriteFailed": "ईमेल भेजा गया, लेकिन दोहराव-रोधी स्थिति सहेजी नहीं जा सकी।",
+    "ReportCount": "समस्याओं की संख्या: {0}"
   },
   "id": {
     "AppTitle": "Pemeriksa Sistem Mizuzaky",
@@ -621,13 +660,16 @@
     "EmailReportSubject": "Laporan kesehatan sistem dari {0}",
     "EmailReportPrivacy": "Laporan hanya memuat ringkasan singkat. Log Windows lengkap dan kode sumber tidak dikirim.",
     "EmailSetupHost": "Server SMTP (contoh: smtp.gmail.com)",
-    "EmailSetupPort": "Port pengiriman SMTP (biasanya 587)",
+    "EmailSetupPort": "Port pengiriman SMTP (hanya 587)",
     "EmailSetupSender": "Alamat email pengirim",
     "EmailSetupRecipient": "Alamat email penerima laporan",
     "EmailTestPrompt": "Kirim email uji sekarang? (Y/T)",
     "ReportComputer": "Komputer: {0}",
     "ReportTime": "Waktu: {0}",
-    "ReportFindings": "Temuan:"
+    "ReportFindings": "Temuan:",
+    "EmailStateUntrusted": "Email tidak dikirim karena status keamanan terlindungi tidak dapat diverifikasi.",
+    "EmailStateWriteFailed": "Email terkirim, tetapi status pencegah pengulangan tidak dapat disimpan.",
+    "ReportCount": "Jumlah masalah: {0}"
   },
   "th": {
     "AppTitle": "Mizuzaky ตัวตรวจสอบระบบ",
@@ -666,12 +708,15 @@
     "EmailReportSubject": "รายงานสถานะระบบจาก {0}",
     "EmailReportPrivacy": "มีเฉพาะสรุปสั้น ๆ ไม่มีการส่งบันทึก Windows ทั้งหมดหรือซอร์สโค้ด",
     "EmailSetupHost": "เซิร์ฟเวอร์ SMTP (ตัวอย่าง smtp.gmail.com)",
-    "EmailSetupPort": "พอร์ตส่ง SMTP (ปกติคือ 587)",
+    "EmailSetupPort": "พอร์ตส่ง SMTP (เฉพาะ 587)",
     "EmailSetupSender": "ที่อยู่อีเมลผู้ส่ง",
     "EmailSetupRecipient": "ที่อยู่อีเมลผู้รับรายงาน",
     "EmailTestPrompt": "ส่งอีเมลทดสอบตอนนี้หรือไม่ (Y/N)",
     "ReportComputer": "คอมพิวเตอร์: {0}",
     "ReportTime": "เวลา: {0}",
-    "ReportFindings": "สิ่งที่พบ:"
+    "ReportFindings": "สิ่งที่พบ:",
+    "EmailStateUntrusted": "ไม่ได้ส่งอีเมลเนื่องจากตรวจสอบสถานะความปลอดภัยที่ป้องกันไว้ไม่ได้",
+    "EmailStateWriteFailed": "ส่งอีเมลแล้ว แต่บันทึกสถานะป้องกันการส่งซ้ำไม่ได้",
+    "ReportCount": "จำนวนปัญหา: {0}"
   }
 }

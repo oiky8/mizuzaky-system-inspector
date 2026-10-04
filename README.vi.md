@@ -44,9 +44,11 @@ Chọn **Start with Windows** trong ứng dụng để thêm hoặc gỡ shortcu
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
 ```
 
-Nhập máy chủ gửi SMTP, cổng (thường là 587), địa chỉ người gửi/người nhận và tên đăng nhập/mật khẩu ứng dụng SMTP. Nếu nhà cung cấp yêu cầu, hãy dùng mật khẩu ứng dụng. Mật khẩu được Windows DPAPI mã hóa cho tài khoản Windows hiện tại và lưu dưới `%LOCALAPPDATA%\MizuzakySystemInspector`, không nằm trong repository. Không dán thông tin đăng nhập vào mã nguồn hoặc commit lên GitHub. Trong lúc cấu hình, bạn có thể chọn gửi email thử.
+Nhập tên máy chủ SMTP công khai của nhà cung cấp, cổng `587`, địa chỉ người gửi/người nhận và tên đăng nhập/mật khẩu ứng dụng SMTP. Ứng dụng từ chối địa chỉ IP, tên máy chủ nội bộ, cổng khác 587 và địa chỉ email kèm tên hiển thị. Ứng dụng dùng SMTP xác thực qua STARTTLS, yêu cầu TLS 1.2 và kiểm tra chứng thư máy chủ/tên máy chủ bằng xác thực chuẩn của Windows/.NET; chứng thư không hợp lệ hoặc tự ký sẽ bị từ chối. Nhà cung cấp không hỗ trợ STARTTLS cổng 587 sẽ không dùng được.
 
-Email cần máy đang kết nối mạng và nhà cung cấp cho phép SMTP có xác thực. Ứng dụng chỉ gửi khi có phát hiện mới/thay đổi. Nếu chưa cấu hình hoặc gửi thất bại, ứng dụng sẽ báo cục bộ và ghi vào nhật ký.
+Mật khẩu SMTP được Windows DPAPI bảo vệ theo tài khoản hiện tại. Ứng dụng đặt ACL chỉ cho tài khoản hiện tại và SYSTEM trên thư mục dữ liệu, cấu hình email, thông tin xác thực, nhật ký và trạng thái chống gửi lặp; đồng thời từ chối tệp cấu hình là reparse point. Trạng thái chống gửi lặp cũng được DPAPI mã hóa; giới hạn tối đa một email mỗi giờ và không gửi lại cùng tóm tắt trong 24 giờ. Phần nội dung báo cáo chỉ gồm thời gian và số lượng vấn đề; không gồm tên máy, địa chỉ người nhận, nội dung sự kiện thô, đường dẫn tệp hay mã nguồn. Phần tiêu đề email vẫn hiển thị người gửi và người nhận đã cấu hình. Số lượng vấn đề theo ngôn ngữ giao diện Windows đã chọn.
+
+Các bảo vệ này giúp hạn chế rủi ro từ tài khoản Windows khác và kết nối truyền tải không an toàn; chúng không thể bảo vệ bí mật trước mã độc đang chạy dưới chính tài khoản Windows của bạn, nhà cung cấp email bị xâm nhập hoặc hộp thư người nhận bị chiếm. Email cần mạng và SMTP xác thực hỗ trợ STARTTLS cổng 587. Nếu cấu hình hoặc xác minh chứng thư thất bại, ứng dụng từ chối gửi và báo lỗi cục bộ.
 
 ## An toàn và giới hạn
 

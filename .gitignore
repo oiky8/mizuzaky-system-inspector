@@ -8,3 +8,4 @@ email-credential.xml
 # Runtime output
 assistant.log
 last-report.json
+last-report.dat

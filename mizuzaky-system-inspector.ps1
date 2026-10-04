@@ -7,12 +7,13 @@ param(
 $ErrorActionPreference = 'Stop'
 
 Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName System.Security
 
 $appDirectory = Join-Path $env:LOCALAPPDATA 'MizuzakySystemInspector'
 $logPath = Join-Path $appDirectory 'assistant.log'
 $emailConfigPath = Join-Path $appDirectory 'email-config.json'
 $emailCredentialPath = Join-Path $appDirectory 'email-credential.xml'
-$lastReportPath = Join-Path $appDirectory 'last-report.json'
+$lastReportPath = Join-Path $appDirectory 'last-report.dat'
 $catalogPath = Join-Path (Split-Path -Parent $PSCommandPath) 'error-catalog.json'
 $startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
 $scriptPath = $PSCommandPath
@@ -29,6 +30,9 @@ $script:checkIntervalHours = 3
 $script:busyRetryMinutes = 15
 $script:busyCpuThreshold = 70
 $script:minimumFreeMemoryMB = 1536
+$script:emailReportMinimumInterval = [TimeSpan]::FromHours(1)
+$script:emailReportRepeatInterval = [TimeSpan]::FromHours(24)
+$script:reportStateEntropy = [Text.Encoding]::UTF8.GetBytes('MizuzakySystemInspector.ReportState.v1')
 $uiCulture = [Globalization.CultureInfo]::CurrentUICulture
 if ($uiCulture.Name -match '^zh-(TW|HK|MO|Hant)') {
     $script:language = 'zh-TW'
@@ -77,6 +81,82 @@ $script:detectedRuntimes = @()
 
 New-Item -ItemType Directory -Path $appDirectory -Force | Out-Null
 
+function Set-PrivatePathAcl {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][bool]$IsDirectory
+    )
+
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw ('Refusing to use a reparse point for protected application data: {0}' -f $Path)
+    }
+
+    if ($IsDirectory) {
+        $acl = New-Object System.Security.AccessControl.DirectorySecurity
+        $inheritance = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+            [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    }
+    else {
+        $acl = New-Object System.Security.AccessControl.FileSecurity
+        $inheritance = [System.Security.AccessControl.InheritanceFlags]::None
+    }
+
+    $acl.SetAccessRuleProtection($true, $false)
+    $acl.SetOwner($script:currentUserSid)
+    foreach ($sid in @($script:currentUserSid, [System.Security.Principal.SecurityIdentifier]::new('S-1-5-18'))) {
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid,
+            [System.Security.AccessControl.FileSystemRights]::FullControl,
+            $inheritance,
+            [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow
+        )
+        $acl.AddAccessRule($rule)
+    }
+    Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
+}
+
+function Assert-PrivatePathAcl {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw ('Refusing to use a reparse point for protected application data: {0}' -f $Path)
+    }
+    $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+    $ownerSid = ([System.Security.Principal.NTAccount]::new($acl.Owner)).Translate([System.Security.Principal.SecurityIdentifier])
+    if ($ownerSid.Value -ne $script:currentUserSid.Value -or -not $acl.AreAccessRulesProtected) {
+        throw ('Protected application data has an unexpected owner or inherited permissions: {0}' -f $Path)
+    }
+
+    $allowedSids = @($script:currentUserSid.Value, 'S-1-5-18')
+    foreach ($rule in $acl.Access) {
+        $ruleSid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        if ($rule.IsInherited -or $rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or $ruleSid -notin $allowedSids) {
+            throw ('Protected application data has an unexpected access rule: {0}' -f $Path)
+        }
+    }
+}
+
+function Protect-PrivateFile {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (Test-Path -LiteralPath $Path) {
+        Set-PrivatePathAcl -Path $Path -IsDirectory $false
+        Assert-PrivatePathAcl -Path $Path
+    }
+}
+
+$script:currentUserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User
+Set-PrivatePathAcl -Path $appDirectory -IsDirectory $true
+Assert-PrivatePathAcl -Path $appDirectory
+$legacyReportPath = Join-Path $appDirectory 'last-report.json'
+if (Test-Path -LiteralPath $legacyReportPath) {
+    Protect-PrivateFile -Path $legacyReportPath
+    Remove-Item -LiteralPath $legacyReportPath -Force -ErrorAction Stop
+}
+
 function Get-Text {
     param([Parameter(Mandatory)][string]$Key)
     return $script:uiText.$($script:language).$Key
@@ -103,26 +183,90 @@ function Get-InstalledProgrammingRuntimes {
     return @($detected.ToArray())
 }
 
-function Read-EmailConfiguration {
-    if (-not (Test-Path -LiteralPath $emailConfigPath) -or -not (Test-Path -LiteralPath $emailCredentialPath)) {
-        return $null
+function Normalize-SmtpHost {
+    param([Parameter(Mandatory)][string]$HostName)
+
+    $hostValue = $HostName.Trim().TrimEnd('.')
+    if ($hostValue.Length -gt 253 -or $hostValue -match '[\s/@:]') {
+        throw 'Use a public DNS hostname for the SMTP server, not an IP address or local name.'
+    }
+
+    $ipAddress = $null
+    if ([Net.IPAddress]::TryParse($hostValue, [ref]$ipAddress)) {
+        throw 'SMTP IP addresses are not accepted; use the provider hostname so TLS can validate its identity.'
     }
 
     try {
+        $asciiHost = ([Globalization.IdnMapping]::new()).GetAscii($hostValue).ToLowerInvariant()
+    }
+    catch {
+        throw 'The SMTP server name is not a valid internationalized DNS hostname.'
+    }
+
+    if ($asciiHost.Length -gt 253 -or $asciiHost -notmatch '^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' -or
+        $asciiHost -match '\.(local|localhost|internal|test|invalid|example|home|corp|lan|intranet|private|onion)$|\.home\.arpa$') {
+        throw 'Use a fully qualified public DNS hostname for the SMTP server.'
+    }
+    return $asciiHost
+}
+
+function Get-ValidatedEmailAddress {
+    param([Parameter(Mandatory)][string]$Address)
+
+    if ($Address.Length -gt 254 -or $Address -match '[\r\n]') {
+        throw 'Enter a valid email address.'
+    }
+    try {
+        $mailAddress = New-Object System.Net.Mail.MailAddress($Address.Trim())
+    }
+    catch {
+        throw 'Enter a valid email address.'
+    }
+    if ($mailAddress.Address -ine $Address.Trim()) {
+        throw 'Enter only an email address, without a display name.'
+    }
+    return $mailAddress.Address
+}
+
+function Read-EmailConfiguration {
+    $hasConfig = Test-Path -LiteralPath $emailConfigPath
+    $hasCredential = Test-Path -LiteralPath $emailCredentialPath
+    if (-not $hasConfig -and -not $hasCredential) {
+        return $null
+    }
+    if (-not $hasConfig -or -not $hasCredential) {
+        throw 'Email configuration is incomplete.'
+    }
+
+    try {
+        Assert-PrivatePathAcl -Path $appDirectory
+        Assert-PrivatePathAcl -Path $emailConfigPath
+        Assert-PrivatePathAcl -Path $emailCredentialPath
+        if ((Get-Item -LiteralPath $emailConfigPath).Length -gt 16384 -or (Get-Item -LiteralPath $emailCredentialPath).Length -gt 65536) {
+            throw 'Email configuration files exceed their permitted size.'
+        }
         $config = Get-Content -LiteralPath $emailConfigPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
         if (-not $config.host -or -not $config.port -or -not $config.from -or -not $config.to) {
             throw 'Email configuration is incomplete.'
         }
+        $smtpHost = Normalize-SmtpHost -HostName ([string]$config.host)
+        if ([int]$config.port -ne 587) {
+            throw 'Only authenticated SMTP submission with STARTTLS on port 587 is supported.'
+        }
+        $sender = Get-ValidatedEmailAddress -Address ([string]$config.from)
+        $recipient = Get-ValidatedEmailAddress -Address ([string]$config.to)
         $credential = Import-Clixml -LiteralPath $emailCredentialPath -ErrorAction Stop
-        if ($credential -isnot [System.Management.Automation.PSCredential]) {
+        if ($credential -isnot [System.Management.Automation.PSCredential] -or
+            [string]::IsNullOrWhiteSpace($credential.UserName) -or
+            $credential.GetNetworkCredential().Password.Length -lt 1) {
             throw 'The saved SMTP credential is invalid.'
         }
 
         return [pscustomobject]@{
-            Host = [string]$config.host
-            Port = [int]$config.port
-            From = [string]$config.from
-            To = [string]$config.to
+            Host = $smtpHost
+            Port = 587
+            From = $sender
+            To = $recipient
             Credential = $credential
         }
     }
@@ -138,6 +282,9 @@ function Send-EmailMessage {
         [Parameter(Mandatory)][string]$Body
     )
 
+    if ($Configuration.Port -ne 587 -or (Normalize-SmtpHost -HostName $Configuration.Host) -ne $Configuration.Host) {
+        throw 'Refusing to send email without a validated SMTP STARTTLS destination on port 587.'
+    }
     $client = New-Object System.Net.Mail.SmtpClient($Configuration.Host, $Configuration.Port)
     $message = New-Object System.Net.Mail.MailMessage($Configuration.From, $Configuration.To, $Subject, $Body)
     try {
@@ -159,16 +306,15 @@ function Configure-Email {
     if ([string]::IsNullOrWhiteSpace($hostName)) {
         throw 'SMTP server name cannot be empty.'
     }
+    $hostName = Normalize-SmtpHost -HostName $hostName
     $portInput = Read-Host (Get-Text 'EmailSetupPort')
     $port = 0
-    if (-not [int]::TryParse($portInput, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
-        throw 'Enter a valid SMTP port between 1 and 65535.'
+    if (-not [int]::TryParse($portInput, [ref]$port) -or $port -ne 587) {
+        throw 'For security, only SMTP submission with STARTTLS on port 587 is supported.'
     }
 
-    $sender = Read-Host (Get-Text 'EmailSetupSender')
-    $recipient = Read-Host (Get-Text 'EmailSetupRecipient')
-    [void](New-Object System.Net.Mail.MailAddress($sender))
-    [void](New-Object System.Net.Mail.MailAddress($recipient))
+    $sender = Get-ValidatedEmailAddress -Address (Read-Host (Get-Text 'EmailSetupSender'))
+    $recipient = Get-ValidatedEmailAddress -Address (Read-Host (Get-Text 'EmailSetupRecipient'))
     $credential = Get-Credential -Message 'Enter the SMTP username and app password. It is encrypted for this Windows user.'
     if (-not $credential) {
         throw 'Email setup was cancelled because no SMTP credential was provided.'
@@ -181,7 +327,9 @@ function Configure-Email {
         to = $recipient.Trim()
     }
     $config | ConvertTo-Json | Set-Content -LiteralPath $emailConfigPath -Encoding UTF8
+    Protect-PrivateFile -Path $emailConfigPath
     $credential | Export-Clixml -LiteralPath $emailCredentialPath -Force
+    Protect-PrivateFile -Path $emailCredentialPath
     Write-Output ('Email settings saved under {0}. The credential is protected for this Windows user.' -f $appDirectory)
 
     $answer = Read-Host (Get-Text 'EmailTestPrompt')
@@ -189,7 +337,7 @@ function Configure-Email {
         $configuration = Read-EmailConfiguration
         Send-EmailMessage -Configuration $configuration `
             -Subject (Get-Text 'EmailReportTitle') `
-            -Body ('Email reporting is configured for computer {0} at {1}.' -f $env:COMPUTERNAME, (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+            -Body ((Get-Text 'EmailReportTitle') + [Environment]::NewLine + ((Get-Text 'ReportTime') -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')))
         Write-Output 'Test email sent successfully.'
     }
 }
@@ -228,9 +376,78 @@ function Write-AssistantLog {
 
     $entry = '{0}  {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
     Add-Content -LiteralPath $logPath -Value $entry -Encoding UTF8
+    Protect-PrivateFile -Path $logPath
 
     if ($script:logText) {
         $script:logText.Text = (Get-Content -LiteralPath $logPath -Tail 6 -ErrorAction Stop) -join [Environment]::NewLine
+    }
+}
+
+function Read-ProtectedReportState {
+    if (-not (Test-Path -LiteralPath $lastReportPath)) {
+        return $null
+    }
+
+    Assert-PrivatePathAcl -Path $lastReportPath
+    if ((Get-Item -LiteralPath $lastReportPath).Length -gt 8192) {
+        throw 'The protected email report state exceeds its permitted size.'
+    }
+
+    $protectedBytes = [Convert]::FromBase64String((Get-Content -LiteralPath $lastReportPath -Raw -Encoding ASCII -ErrorAction Stop).Trim())
+    $plainBytes = $null
+    try {
+        $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+            $protectedBytes,
+            $script:reportStateEntropy,
+            [Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
+        $state = [Text.Encoding]::UTF8.GetString($plainBytes) | ConvertFrom-Json -ErrorAction Stop
+        $sentAt = [DateTimeOffset]::MinValue
+        if ($state.fingerprint -notmatch '^[A-Fa-f0-9]{64}$' -or
+            -not [DateTimeOffset]::TryParse([string]$state.sentAt, [ref]$sentAt)) {
+            throw 'Protected email report state is invalid.'
+        }
+        return [pscustomobject]@{
+            Fingerprint = [string]$state.fingerprint
+            SentAt = $sentAt
+        }
+    }
+    finally {
+        if ($null -ne $plainBytes) {
+            [Array]::Clear($plainBytes, 0, $plainBytes.Length)
+        }
+        [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
+    }
+}
+
+function Write-ProtectedReportState {
+    param(
+        [Parameter(Mandatory)][string]$Fingerprint,
+        [Parameter(Mandatory)][DateTimeOffset]$SentAt
+    )
+
+    if (Test-Path -LiteralPath $lastReportPath) {
+        Assert-PrivatePathAcl -Path $lastReportPath
+    }
+    $plainBytes = [Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -Compress -InputObject @{
+        fingerprint = $Fingerprint
+        sentAt = $SentAt.ToString('o')
+    }))
+    $protectedBytes = $null
+    try {
+        $protectedBytes = [Security.Cryptography.ProtectedData]::Protect(
+            $plainBytes,
+            $script:reportStateEntropy,
+            [Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
+        [Convert]::ToBase64String($protectedBytes) | Set-Content -LiteralPath $lastReportPath -Encoding ASCII -NoNewline
+        Protect-PrivateFile -Path $lastReportPath
+    }
+    finally {
+        [Array]::Clear($plainBytes, 0, $plainBytes.Length)
+        if ($null -ne $protectedBytes) {
+            [Array]::Clear($protectedBytes, 0, $protectedBytes.Length)
+        }
     }
 }
 
@@ -238,25 +455,37 @@ function Send-HealthReport {
     param([Parameter(Mandatory)][string[]]$Issues)
 
     if ($Issues.Count -eq 0) {
-        if (Test-Path -LiteralPath $lastReportPath) {
-            Remove-Item -LiteralPath $lastReportPath -ErrorAction Stop
-        }
         return
     }
 
-    $reportText = $Issues -join [Environment]::NewLine
+    $reportText = @(
+        (Get-Text 'ReportFindings')
+        ((Get-Text 'ReportCount') -f $Issues.Count)
+    ) -join [Environment]::NewLine
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
-        $fingerprint = [Convert]::ToBase64String($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($reportText)))
+        $fingerprint = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($reportText))).Replace('-', '')
     }
     finally {
         $sha.Dispose()
     }
 
-    if (Test-Path -LiteralPath $lastReportPath) {
-        $lastReport = Get-Content -LiteralPath $lastReportPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        if ($lastReport.fingerprint -eq $fingerprint) {
-            Write-AssistantLog 'Email report skipped because the same issue report was already sent.'
+    try {
+        $lastReport = Read-ProtectedReportState
+    }
+    catch {
+        Write-AssistantLog ('Email report blocked because its protected anti-repeat state could not be verified: {0}' -f $_.Exception.Message)
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'EmailStateUntrusted')
+        return
+    }
+    if ($lastReport) {
+        $age = [DateTimeOffset]::Now - $lastReport.SentAt
+        if ($age -lt $script:emailReportMinimumInterval) {
+            Write-AssistantLog 'Email report deferred by the minimum-interval limit.'
+            return
+        }
+        if ($lastReport.Fingerprint -eq $fingerprint -and $age -lt $script:emailReportRepeatInterval) {
+            Write-AssistantLog 'Email report skipped because the same privacy-safe summary was sent recently.'
             return
         }
     }
@@ -277,10 +506,8 @@ function Send-HealthReport {
 
     $body = @(
         (Get-Text 'EmailReportTitle')
-        ((Get-Text 'ReportComputer') -f $env:COMPUTERNAME)
         ((Get-Text 'ReportTime') -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz'))
         ''
-        (Get-Text 'ReportFindings')
         $reportText
         ''
         (Get-Text 'EmailReportPrivacy')
@@ -288,17 +515,22 @@ function Send-HealthReport {
 
     try {
         Send-EmailMessage -Configuration $configuration `
-            -Subject ((Get-Text 'EmailReportSubject') -f $env:COMPUTERNAME) `
+            -Subject (Get-Text 'EmailReportTitle') `
             -Body $body
-        [pscustomobject]@{
-            fingerprint = $fingerprint
-            sentAt = (Get-Date).ToString('o')
-        } | ConvertTo-Json | Set-Content -LiteralPath $lastReportPath -Encoding UTF8
-        Write-AssistantLog ('Email report sent to configured recipient {0}.' -f $configuration.To)
     }
     catch {
         Write-AssistantLog ('Email report failed: {0}' -f $_.Exception.Message)
         $script:statusText.Text += [Environment]::NewLine + ((Get-Text 'EmailFailed') -f $_.Exception.Message)
+        return
+    }
+
+    try {
+        Write-ProtectedReportState -Fingerprint $fingerprint -SentAt ([DateTimeOffset]::Now)
+        Write-AssistantLog 'Privacy-minimized email health report sent successfully.'
+    }
+    catch {
+        Write-AssistantLog ('Email was sent, but protected anti-repeat state could not be saved; a duplicate report may be sent later: {0}' -f $_.Exception.Message)
+        $script:statusText.Text += [Environment]::NewLine + (Get-Text 'EmailStateWriteFailed')
     }
 }
 

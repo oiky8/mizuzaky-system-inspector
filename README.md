@@ -44,9 +44,11 @@ To configure email, run the script interactively in PowerShell:
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
 ```
 
-Enter your SMTP submission server, port (usually 587), sender, recipient, and SMTP username/app password. Use an app password when your provider requires one. The password is stored with Windows DPAPI protection for the current Windows user under `%LOCALAPPDATA%\MizuzakySystemInspector`; it is not stored in the repository. Do not paste credentials into source files or commit them. A test message can be sent during setup.
+Enter your provider's public SMTP hostname, port `587`, sender, recipient, and SMTP username/app password. The app rejects IP addresses, local-only hostnames, non-587 ports, and address display-name syntax. It uses authenticated SMTP with STARTTLS, requires TLS 1.2, and relies on Windows/.NET's normal server-certificate chain and hostname validation; invalid or self-signed certificates fail closed. Providers that do not offer STARTTLS on port 587 are not supported.
 
-Email reports require the computer to be online and the SMTP provider to permit authenticated SMTP. They are sent only when findings exist and change. If email is not configured or sending fails, the app reports that locally and keeps its local log.
+The SMTP password is stored using Windows DPAPI for the current user. The app also protects its data directory, email settings, credential file, local log, and anti-repeat state with explicit current-user/SYSTEM ACLs and rejects reparse-point config files. Report anti-repeat state is DPAPI-protected, reports are limited to one per hour, and identical summaries are not repeated for 24 hours. The report body contains only a timestamp and issue count: it does not include a computer name, recipient address, raw event text, file paths, or source code. The normal mail headers still identify the configured sender and recipient. The report count follows the selected Windows UI language.
+
+These controls protect data from other local accounts and insecure transport. They cannot protect secrets from malware already running as the same Windows user, a compromised mail provider, or a recipient mailbox. Email requires an online PC and a provider that supports authenticated STARTTLS on port 587. If configuration validation or certificate verification fails, the app refuses to send and reports the failure locally.
 
 ## Safety and limitations
 
