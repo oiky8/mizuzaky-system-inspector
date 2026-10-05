@@ -212,6 +212,7 @@ $script:logText = $null
 $script:startupButton = $null
 $script:onlineSearchButton = $null
 $script:onlineSearchQuery = $null
+$script:fileReviewSearchQuery = $null
 $script:knowledgeEntries = @()
 $script:checkTimer = $null
 $script:fileReviewTimer = $null
@@ -889,6 +890,21 @@ function Invoke-PendingFileReview {
                 $findingSummary = $review.Findings -join ', '
                 Write-AssistantLog ('Static review heuristic flagged {0}: {1}' -f $path, $findingSummary)
                 $script:statusText.Text = (Get-Text 'FileReviewFlagged') -f $script:fileReviewFindingCount
+                $searchTopics = foreach ($finding in $review.Findings) {
+                    switch ($finding) {
+                        'network-or-download-api-present' { 'PowerShell script network download API safe security review' }
+                        'dynamic-execution-api-present' { 'PowerShell script dynamic code execution eval exec security risks' }
+                        'network-plus-dynamic-execution' { 'safely review script downloading and executing code' }
+                        'encoded-or-obfuscated-command' { 'Windows encoded PowerShell command security review' }
+                        'security-control-tampering' { 'Microsoft Defender settings changed script security review' }
+                        'invalid-or-untrusted-authenticode-signature' { 'Windows Authenticode signature untrusted verify publisher safely' }
+                    }
+                }
+                if ($searchTopics) {
+                    $script:fileReviewSearchQuery = (@($searchTopics | Select-Object -Unique) -join ' ')
+                    $script:onlineSearchQuery = $script:fileReviewSearchQuery
+                    $script:onlineSearchButton.IsEnabled = $true
+                }
             }
         }
         catch {
@@ -1130,6 +1146,9 @@ function Invoke-HealthCheck {
             $freeGiB = [math]::Round($drive.FreeSpace / 1GB, 1)
             if ($freeGiB -lt 5) {
                 $issues.Add(((Get-Text 'DiskLow') -f $drive.DeviceID, $freeGiB))
+                if (-not $script:onlineSearchQuery) {
+                    $script:onlineSearchQuery = 'Windows low disk space safe troubleshooting'
+                }
             }
         }
     }
@@ -1143,6 +1162,9 @@ function Invoke-HealthCheck {
     }
     catch {
         $dnsError = $_.Exception.Message
+        if (-not $script:onlineSearchQuery) {
+            $script:onlineSearchQuery = 'Windows DNS name resolution troubleshooting'
+        }
         $dnsRepair = $script:safeRepairs | Where-Object { $_.id -eq 'flush-dns-cache' } | Select-Object -First 1
         Write-AssistantLog ('DNS lookup failed: {0}' -f $dnsError)
         try {
@@ -1217,15 +1239,11 @@ function Invoke-HealthCheck {
                             }
                             $issues.Add(((Get-Text 'EventKnown') -f $eventRecord.Id, $eventRecord.ProviderName, $eventRecord.LogName, $summary))
                         }
-                        if (-not $script:onlineSearchQuery) {
-                            $script:onlineSearchQuery = 'Windows event {0} {1} {2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
-                        }
+                        $script:onlineSearchQuery = 'Windows event {0} {1} {2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
                     }
                     else {
                         $unknownEventCount++
-                        if (-not $script:onlineSearchQuery) {
-                            $script:onlineSearchQuery = 'Windows event {0} {1} {2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
-                        }
+                        $script:onlineSearchQuery = 'Windows event {0} {1} {2}' -f $eventRecord.LogName, $eventRecord.ProviderName, $eventRecord.Id
                     }
                 }
             }
@@ -1251,12 +1269,18 @@ function Invoke-HealthCheck {
     }
     catch {
         $issues.Add(((Get-Text 'NetworkFailed') -f $_.Exception.Message))
+        if (-not $script:onlineSearchQuery) {
+            $script:onlineSearchQuery = 'Windows internet connection network troubleshooting'
+        }
         Write-AssistantLog ('Internet connection test failed: {0}' -f $_.Exception.Message)
     }
 
     if ($script:fileReviewUnreportedCount -gt 0) {
         $issues.Add(((Get-Text 'FileReviewFlagged') -f $script:fileReviewUnreportedCount))
         $script:fileReviewUnreportedCount = 0
+        if (-not $script:onlineSearchQuery -and $script:fileReviewSearchQuery) {
+            $script:onlineSearchQuery = $script:fileReviewSearchQuery
+        }
     }
 
     if ($issues.Count -eq 0) {
@@ -1282,6 +1306,10 @@ function Invoke-HealthCheck {
     }
     elseif ($script:fileMonitoringCoverageIncomplete) {
         $script:statusText.Text += [Environment]::NewLine + (Get-Text 'FileWatchCoverageWarning')
+    }
+
+    if ($script:onlineSearchQuery) {
+        $script:onlineSearchButton.IsEnabled = $true
     }
 
     Send-HealthReport -Issues @($issues.ToArray())
@@ -1411,15 +1439,15 @@ $script:onlineSearchButton.Padding = New-Object System.Windows.Thickness(10, 5, 
 $script:onlineSearchButton.Margin = New-Object System.Windows.Thickness(0, 0, 6, 0)
 $script:onlineSearchButton.Add_Click({
     if ($script:onlineSearchQuery) {
-        $uri = 'https://learn.microsoft.com/search/?terms={0}' -f [uri]::EscapeDataString($script:onlineSearchQuery)
+        $uri = 'https://www.google.com/search?q={0}' -f [uri]::EscapeDataString($script:onlineSearchQuery)
         try {
             Start-Process -FilePath $uri -ErrorAction Stop
-            Write-AssistantLog 'Opened Microsoft Learn search with only a generic Windows event identifier.'
+            Write-AssistantLog 'Opened a web search with a generic error category; no source text, file path, or event message was included.'
         }
         catch {
-            Write-AssistantLog ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message)
+            Write-AssistantLog ('Could not open the web search: {0}' -f $_.Exception.Message)
             [void][System.Windows.MessageBox]::Show(
-                ('Could not open Microsoft Learn: {0}' -f $_.Exception.Message),
+                ('Could not open the web search: {0}' -f $_.Exception.Message),
                 (Get-Text 'AppTitle'),
                 [System.Windows.MessageBoxButton]::OK,
                 [System.Windows.MessageBoxImage]::Error
