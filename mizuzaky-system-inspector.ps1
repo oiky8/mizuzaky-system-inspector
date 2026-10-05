@@ -208,10 +208,13 @@ $emailConfigPath = Join-Path $appDirectory 'email-config.json'
 $emailCredentialPath = Join-Path $appDirectory 'email-credential.xml'
 $lastReportPath = Join-Path $appDirectory 'last-report.dat'
 $catalogPath = Join-Path (Split-Path -Parent $PSCommandPath) 'error-catalog.json'
-$startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
+$legacyStartupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
+$startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'mizuzaky-system-inspector.lnk'
 $scriptPath = $PSCommandPath
+$script:assetDirectory = Join-Path (Split-Path -Parent $scriptPath) 'assets'
 $script:window = $null
 $script:notificationIcon = $null
+$script:mascotImage = $null
 $script:statusText = $null
 $script:logText = $null
 $script:startupButton = $null
@@ -239,6 +242,7 @@ $script:minimumFreeMemoryMB = 1536
 $script:emailReportMinimumInterval = [TimeSpan]::FromHours(1)
 $script:emailReportRepeatInterval = [TimeSpan]::FromHours(24)
 $script:reportStateEntropy = [Text.Encoding]::UTF8.GetBytes('MizuzakySystemInspector.ReportState.v1')
+$script:lastRepairPerformed = $false
 if ($Language) {
     $script:language = $Language
 }
@@ -267,7 +271,7 @@ try {
 catch {
     [System.Windows.MessageBox]::Show(
         ('Could not load the locale catalog: {0}' -f $_.Exception.Message),
-        'Mizuzaky System Inspector',
+        'mizuzaky-system-inspector',
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Error
     ) | Out-Null
@@ -610,7 +614,7 @@ try {
 catch {
     [void][System.Windows.MessageBox]::Show(
         ('Could not load the local error catalog: {0}' -f $_.Exception.Message),
-        'Mizuzaky System Inspector',
+        'mizuzaky-system-inspector',
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Error
     )
@@ -1158,6 +1162,63 @@ function Show-HealthNotification {
     }
 }
 
+function Set-MascotState {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('healthy', 'issue', 'repaired')]
+        [string]$State
+    )
+
+    if (-not $script:mascotImage) {
+        return
+    }
+
+    $imagePath = Join-Path $script:assetDirectory ('mascot-{0}.png' -f $State)
+    if (-not (Test-Path -LiteralPath $imagePath -PathType Leaf)) {
+        Write-AssistantLog ('Mascot image for state {0} is missing: {1}' -f $State, $imagePath)
+        return
+    }
+
+    try {
+        $bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bitmap.BeginInit()
+        $bitmap.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bitmap.UriSource = [uri]::new((Resolve-Path -LiteralPath $imagePath).Path)
+        $bitmap.EndInit()
+        $bitmap.Freeze()
+        $script:mascotImage.Source = $bitmap
+        if ($script:window) {
+            $script:window.Icon = $bitmap
+        }
+        if ($script:notificationIcon) {
+            switch ($State) {
+                'healthy' { $script:notificationIcon.Icon = [System.Drawing.SystemIcons]::Information }
+                'issue' { $script:notificationIcon.Icon = [System.Drawing.SystemIcons]::Warning }
+                'repaired' { $script:notificationIcon.Icon = [System.Drawing.SystemIcons]::Asterisk }
+            }
+        }
+        Write-AssistantLog ('Mascot status image set to {0}.' -f $State)
+    }
+    catch {
+        Write-AssistantLog ('Could not load mascot image for state {0}: {1}' -f $State, $_.Exception.Message)
+    }
+}
+
+function Get-HealthState {
+    param(
+        [Parameter(Mandatory)][ValidateRange(0, [int]::MaxValue)][int]$IssueCount,
+        [Parameter(Mandatory)][bool]$SafeRepairPerformed
+    )
+
+    if ($IssueCount -eq 0) {
+        return 'healthy'
+    }
+    if ($SafeRepairPerformed -and $IssueCount -eq 1) {
+        return 'repaired'
+    }
+    return 'issue'
+}
+
 function Invoke-ScheduledHealthCheck {
     if (-not $script:prioritySet) {
         $script:statusText.Text = Get-Text 'PriorityPaused'
@@ -1189,6 +1250,7 @@ function Invoke-ScheduledHealthCheck {
     }
     catch {
         $script:statusText.Text = Get-Text 'CheckFailed'
+        Set-MascotState -State 'issue'
         Write-AssistantLog ('Health check failed: {0}' -f $_.Exception.Message)
         Show-HealthNotification -Message (Get-Text 'NotificationFailed') -Icon ([System.Windows.Forms.ToolTipIcon]::Error)
         Send-HealthReport -Issues @('Health check failed; details are recorded in the local log.')
@@ -1200,6 +1262,7 @@ function Invoke-ScheduledHealthCheck {
 
 function Invoke-HealthCheck {
     $issues = New-Object System.Collections.Generic.List[string]
+    $script:lastRepairPerformed = $false
     $script:onlineSearchQuery = $null
     $script:onlineSearchButton.IsEnabled = $false
     $script:detectedRuntimes = Get-InstalledProgrammingRuntimes
@@ -1245,7 +1308,8 @@ function Invoke-HealthCheck {
             }
             [void][System.Net.Dns]::GetHostAddresses('www.microsoft.com')
             $issues.Add(((Get-Text 'DnsRepairSucceeded') -f $dnsRepair.sourceUrl))
-            Write-AssistantLog ('DNS cache refresh succeeded. Source: {0}' -f $dnsRepair.sourceUrl)
+            $script:lastRepairPerformed = $true
+            Write-AssistantLog ('Automatic safe repair succeeded: FlushDnsCache. Source: {0}' -f $dnsRepair.sourceUrl)
         }
         catch {
             $issues.Add(((Get-Text 'DnsLookupFailed') -f $dnsError))
@@ -1348,12 +1412,20 @@ function Invoke-HealthCheck {
         }
     }
 
-    if ($issues.Count -eq 0) {
+    $healthState = Get-HealthState -IssueCount $issues.Count -SafeRepairPerformed $script:lastRepairPerformed
+    if ($healthState -eq 'healthy') {
         $script:statusText.Text = Get-Text 'AllGood'
+        Set-MascotState -State $healthState
         Write-AssistantLog 'Health check completed: no issues detected.'
+    }
+    elseif ($healthState -eq 'repaired') {
+        $script:statusText.Text = ((Get-Text 'IssueRepaired') -f $issues[0])
+        Set-MascotState -State $healthState
+        Write-AssistantLog 'Health check completed: the only detected issue was repaired automatically.'
     }
     else {
         $script:statusText.Text = ((Get-Text 'IssuesFound') -f $issues.Count) + [Environment]::NewLine + ($issues -join [Environment]::NewLine)
+        Set-MascotState -State $healthState
         Write-AssistantLog ('Health check found {0} issue(s).' -f $issues.Count)
     }
 
@@ -1378,8 +1450,11 @@ function Invoke-HealthCheck {
     }
 
     Send-HealthReport -Issues @($issues.ToArray())
-    if ($issues.Count -eq 0) {
+    if ($healthState -eq 'healthy') {
         Show-HealthNotification -Message (Get-Text 'NotificationAllGood')
+    }
+    elseif ($healthState -eq 'repaired') {
+        Show-HealthNotification -Message (Get-Text 'NotificationRepaired')
     }
     else {
         Show-HealthNotification `
@@ -1389,7 +1464,7 @@ function Invoke-HealthCheck {
 }
 
 function Update-StartupButton {
-    if (Test-Path -LiteralPath $startupLink) {
+    if ((Test-Path -LiteralPath $startupLink) -or (Test-Path -LiteralPath $legacyStartupLink)) {
         $script:startupButton.Content = Get-Text 'StartupOff'
     }
     else {
@@ -1399,7 +1474,7 @@ function Update-StartupButton {
 
 function Toggle-Startup {
     try {
-        if (Test-Path -LiteralPath $startupLink) {
+        if ((Test-Path -LiteralPath $startupLink) -or (Test-Path -LiteralPath $legacyStartupLink)) {
             $answer = [System.Windows.MessageBox]::Show(
                 (Get-Text 'ConfirmStartupRemoval'),
                 (Get-Text 'StartupRemovalTitle'),
@@ -1410,7 +1485,11 @@ function Toggle-Startup {
                 return
             }
 
-            Remove-Item -LiteralPath $startupLink -ErrorAction Stop
+            foreach ($linkPath in @($startupLink, $legacyStartupLink)) {
+                if (Test-Path -LiteralPath $linkPath) {
+                    Remove-Item -LiteralPath $linkPath -ErrorAction Stop
+                }
+            }
             Write-AssistantLog 'Removed this app shortcut from the current user Startup folder.'
         }
         else {
@@ -1419,7 +1498,7 @@ function Toggle-Startup {
             $shortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
             $shortcut.Arguments = '-NoProfile -STA -WindowStyle Hidden -File "' + $scriptPath + '" -Language "' + $script:language + '"'
             $shortcut.WorkingDirectory = Split-Path -Parent $scriptPath
-            $shortcut.Description = 'Windows health mascot'
+            $shortcut.Description = Get-Text 'AppTitle'
             $shortcut.Save()
             Write-AssistantLog 'Added this app shortcut to the current user Startup folder.'
         }
@@ -1484,11 +1563,14 @@ $script:notificationIcon.Add_DoubleClick({
 $panel = New-Object System.Windows.Controls.StackPanel
 $panel.Margin = New-Object System.Windows.Thickness(16)
 
-$mascot = New-Object System.Windows.Controls.TextBlock
-$mascot.Text = [char]::ConvertFromUtf32(0x1F916)
-$mascot.FontSize = 38
-$mascot.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
-[void]$panel.Children.Add($mascot)
+$script:mascotImage = New-Object System.Windows.Controls.Image
+$script:mascotImage.Width = 112
+$script:mascotImage.Height = 112
+$script:mascotImage.Stretch = [System.Windows.Media.Stretch]::Uniform
+$script:mascotImage.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
+$script:mascotImage.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
+[void]$panel.Children.Add($script:mascotImage)
+Set-MascotState -State 'healthy'
 
 $heading = New-Object System.Windows.Controls.TextBlock
 $heading.Text = Get-Text 'AppTitle'
@@ -1569,6 +1651,7 @@ $window.Top = $workArea.Bottom - 390
 
 Update-StartupButton
 $script:window = $window
+$window.Icon = $script:mascotImage.Source
 Write-AssistantLog 'Mascot started for the current Windows user.'
 
 $process = [System.Diagnostics.Process]::GetCurrentProcess()

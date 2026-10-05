@@ -1,4 +1,4 @@
-# Mizuzaky System Inspector
+# mizuzaky-system-inspector
 
 A lightweight Windows desktop mascot for periodic, load-aware system health checks and conservative diagnostics.
 
@@ -15,6 +15,7 @@ GitHub displays README files as static Markdown and cannot automatically select 
 ## Features
 
 - Checks local disk space, DNS resolution, and Internet connectivity.
+- Shows the supplied mascot artwork for healthy, issue-detected, and safely-repaired states. The app is displayed as `mizuzaky-system-inspector`; its PowerShell console stays hidden when launched from the installer shortcuts.
 - Reviews recent error events from the Windows **System** and **Application** logs against [`error-catalog.json`](./error-catalog.json).
 - Selects Vietnamese, Simplified or Traditional Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Russian, Arabic, Hindi, Indonesian, or Thai from the Windows UI language; other languages fall back to English. Arabic uses right-to-left layout. UI strings are kept in [`locales.json`](./locales.json) for future translations.
 - Detects common toolchains available on `PATH`: Python, Node.js (JavaScript/TypeScript), Java, .NET (including C#), Go, Rust, PHP, Ruby, Perl, Lua, R, Swift, and C/C++. It reports matching recent Windows application-crash events without running runtimes.
@@ -24,6 +25,7 @@ GitHub displays README files as static Markdown and cannot automatically select 
 - Defers checks for 15 minutes when CPU usage is at least 70% or free memory is below 1.5 GB.
 - Sets only its own process priority to `BelowNormal`; it does not close or reprioritize other applications.
 - Can run one allowlisted low-risk repair: refresh the local DNS cache after DNS fails while a direct IP connection is available. It uses the documented Windows `ipconfig` command, verifies the result, and includes the Microsoft source in the report.
+- Automatically repairs only that verified, allowlisted DNS-cache case. Successful repairs are logged locally and shown with the repaired mascot; other findings are reported without attempting speculative fixes.
 - Reports issues by email when SMTP is configured. Reports contain concise findings, not full Windows event messages; unchanged findings are not emailed repeatedly.
 - Opens a web search only when the user clicks the search button. Search terms are generic issue categories or Windows event identifiers; they never contain source code, file paths, or raw event messages. The search provider still receives the query and normal connection metadata. Results are untrusted advice: review sources carefully and never run downloaded scripts or commands just because a page recommends them.
 - Writes a local log to `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
@@ -41,7 +43,7 @@ The error catalog is an editable starter set, not a comprehensive knowledge base
 Open PowerShell in the project folder and run:
 
 ```powershell
-powershell.exe -NoProfile -STA -File ".\mizuzaky-system-inspector.ps1"
+powershell.exe -NoProfile -WindowStyle Hidden -STA -File ".\mizuzaky-system-inspector.ps1"
 ```
 
 Use **Start with Windows** in the app to add or remove its shortcut from the current user's Startup folder. The app starts after that user signs in; it does not run before sign-in.
@@ -50,9 +52,9 @@ The app does not bypass PowerShell's execution policy. If your policy blocks the
 
 ### Installer
 
-The Windows installer is built with Inno Setup 6. Install Inno Setup, then compile `installer.iss` with Inno Setup Compiler (`ISCC.exe`). The installer executable is written to `dist\MizuzakySystemInspector-Setup.exe`.
+The Windows installer is built with Inno Setup 6. Install Inno Setup, then compile `installer.iss` with Inno Setup Compiler (`ISCC.exe`). The installer executable is written to `dist\mizuzaky-system-inspector-setup.exe`.
 
-The installer is per-user and does not require administrator privileges. It preselects the interface language matching Windows and lets you choose another supported language during setup. The selected language is passed to the installed app and its shortcuts, including the optional **Start with Windows** shortcut. The app currently has 15 language choices: English, Vietnamese, Simplified Chinese, Traditional Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Russian, Arabic, Hindi, Indonesian, and Thai; English is the fallback for Windows languages without an app translation. The setup wizard itself is available in all of those languages except Hindi. The Hindi choice uses English wizard messages, with Hindi text for its app-language and shortcut options. It creates a desktop shortcut by default; clear the translated **Create a desktop shortcut** option during setup if you do not want one. Double-click the shortcut to open the app. On the final page, choose the translated **Run Mizuzaky System Inspector now** option to launch the app immediately, or leave it unchecked to finish without starting the app. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
+The installer is per-user and does not require administrator privileges. It preselects the interface language matching Windows and lets you choose another supported language during setup. The selected language is passed to the installed app and its shortcuts, including the optional **Start with Windows** shortcut. The app currently has 15 language choices: English, Vietnamese, Simplified Chinese, Traditional Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Russian, Arabic, Hindi, Indonesian, and Thai; English is the fallback for Windows languages without an app translation. The setup wizard itself is available in all of those languages except Hindi. The Hindi choice uses English wizard messages, with Hindi text for its app-language and shortcut options. It creates a desktop shortcut by default; clear the translated **Create a desktop shortcut** option during setup if you do not want one. Double-click the shortcut to open the app. On the final page, choose the translated **Run mizuzaky-system-inspector now** option to launch the app immediately, or leave it unchecked to finish without starting the app. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
 
 Vietnamese, Simplified Chinese, Traditional Chinese, and Indonesian installer message files are sourced from [Inno Setup's language translations](https://github.com/jrsoftware/issrc/tree/a942f923d84b7a227b49af1721a1dc4492831ec0/Files/Languages). The upstream translation files retain their original contributor attribution.
 

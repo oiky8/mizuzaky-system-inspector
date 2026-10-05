@@ -1,4 +1,4 @@
-#define MyAppName "Mizuzaky System Inspector"
+#define MyAppName "mizuzaky-system-inspector"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Mizuzaky"
 #define MyAppURL "https://github.com/oiky8/mizuzaky-system-inspector"
@@ -11,12 +11,12 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={localappdata}\Programs\Mizuzaky System Inspector
+DefaultDirName={localappdata}\Programs\mizuzaky-system-inspector
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=dist
-OutputBaseFilename=MizuzakySystemInspector-Setup
+OutputBaseFilename=mizuzaky-system-inspector-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -46,52 +46,52 @@ Name: "hindi"; MessagesFile: "compiler:Default.isl,installer-languages\Hindi.isl
 [CustomMessages]
 english.CreateDesktopShortcut=Create a desktop shortcut
 english.AdditionalShortcuts=Additional shortcuts:
-english.RunNow=Run Mizuzaky System Inspector now
+english.RunNow=Run mizuzaky-system-inspector now
 vietnamese.CreateDesktopShortcut=Tạo lối tắt trên màn hình nền
 vietnamese.AdditionalShortcuts=Lối tắt bổ sung:
-vietnamese.RunNow=Chạy Mizuzaky System Inspector ngay
+vietnamese.RunNow=Chạy mizuzaky-system-inspector ngay
 chinesesimplified.CreateDesktopShortcut=创建桌面快捷方式
 chinesesimplified.AdditionalShortcuts=其他快捷方式：
-chinesesimplified.RunNow=立即运行 Mizuzaky System Inspector
+chinesesimplified.RunNow=立即运行 mizuzaky-system-inspector
 chinesetraditional.CreateDesktopShortcut=建立桌面捷徑
 chinesetraditional.AdditionalShortcuts=其他捷徑：
-chinesetraditional.RunNow=立即執行 Mizuzaky System Inspector
+chinesetraditional.RunNow=立即執行 mizuzaky-system-inspector
 spanish.CreateDesktopShortcut=Crear un acceso directo en el escritorio
 spanish.AdditionalShortcuts=Accesos directos adicionales:
-spanish.RunNow=Ejecutar Mizuzaky System Inspector ahora
+spanish.RunNow=Ejecutar mizuzaky-system-inspector ahora
 french.CreateDesktopShortcut=Créer un raccourci sur le bureau
 french.AdditionalShortcuts=Raccourcis supplémentaires :
-french.RunNow=Exécuter Mizuzaky System Inspector maintenant
+french.RunNow=Exécuter mizuzaky-system-inspector maintenant
 german.CreateDesktopShortcut=Desktopverknüpfung erstellen
 german.AdditionalShortcuts=Zusätzliche Verknüpfungen:
-german.RunNow=Mizuzaky System Inspector jetzt starten
+german.RunNow=mizuzaky-system-inspector jetzt starten
 japanese.CreateDesktopShortcut=デスクトップにショートカットを作成する
 japanese.AdditionalShortcuts=追加のショートカット:
-japanese.RunNow=Mizuzaky System Inspector を今すぐ実行
+japanese.RunNow=mizuzaky-system-inspector を今すぐ実行
 korean.CreateDesktopShortcut=바탕 화면 바로 가기 만들기
 korean.AdditionalShortcuts=추가 바로 가기:
-korean.RunNow=Mizuzaky System Inspector 지금 실행
+korean.RunNow=mizuzaky-system-inspector 지금 실행
 portuguese.CreateDesktopShortcut=Criar um atalho no ambiente de trabalho
 portuguese.AdditionalShortcuts=Atalhos adicionais:
-portuguese.RunNow=Executar Mizuzaky System Inspector agora
+portuguese.RunNow=Executar mizuzaky-system-inspector agora
 brazilianportuguese.CreateDesktopShortcut=Criar um atalho na área de trabalho
 brazilianportuguese.AdditionalShortcuts=Atalhos adicionais:
-brazilianportuguese.RunNow=Executar Mizuzaky System Inspector agora
+brazilianportuguese.RunNow=Executar mizuzaky-system-inspector agora
 russian.CreateDesktopShortcut=Создать ярлык на рабочем столе
 russian.AdditionalShortcuts=Дополнительные ярлыки:
-russian.RunNow=Запустить Mizuzaky System Inspector сейчас
+russian.RunNow=Запустить mizuzaky-system-inspector сейчас
 arabic.CreateDesktopShortcut=إنشاء اختصار على سطح المكتب
 arabic.AdditionalShortcuts=اختصارات إضافية:
-arabic.RunNow=تشغيل Mizuzaky System Inspector الآن
+arabic.RunNow=تشغيل mizuzaky-system-inspector الآن
 indonesian.CreateDesktopShortcut=Buat pintasan desktop
 indonesian.AdditionalShortcuts=Pintasan tambahan:
-indonesian.RunNow=Jalankan Mizuzaky System Inspector sekarang
+indonesian.RunNow=Jalankan mizuzaky-system-inspector sekarang
 thai.CreateDesktopShortcut=สร้างทางลัดบนเดสก์ท็อป
 thai.AdditionalShortcuts=ทางลัดเพิ่มเติม:
-thai.RunNow=เรียกใช้ Mizuzaky System Inspector ทันที
+thai.RunNow=เรียกใช้ mizuzaky-system-inspector ทันที
 hindi.CreateDesktopShortcut=डेस्कटॉप शॉर्टकट बनाएँ
 hindi.AdditionalShortcuts=अतिरिक्त शॉर्टकट:
-hindi.RunNow=Mizuzaky System Inspector अभी चलाएँ
+hindi.RunNow=mizuzaky-system-inspector अभी चलाएँ
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopShortcut}"; GroupDescription: "{cm:AdditionalShortcuts}"
@@ -100,13 +100,16 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopShortcut}"; GroupDescription
 Source: "mizuzaky-system-inspector.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "error-catalog.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "locales.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "assets\mascot-healthy.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\mascot-issue.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\mascot-repaired.png"; DestDir: "{app}\assets"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -WindowStyle Hidden -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -WindowStyle Hidden -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -WindowStyle Hidden -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked
 
 [Code]
 function GetAppUiLanguage(Param: String): String;
