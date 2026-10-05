@@ -315,6 +315,41 @@ function Set-PrivatePathAcl {
         )
         $acl.AddAccessRule($rule)
     }
+
+    $existingAcl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+    $existingOwnerSid = ([System.Security.Principal.NTAccount]::new($existingAcl.Owner)).Translate(
+        [System.Security.Principal.SecurityIdentifier]
+    )
+    $existingRules = @($existingAcl.Access)
+    $expectedRules = @($acl.Access)
+    $alreadyPrivate = $existingAcl.AreAccessRulesProtected -and
+        $existingOwnerSid.Value -eq $script:currentUserSid.Value -and
+        $existingRules.Count -eq $expectedRules.Count
+
+    if ($alreadyPrivate) {
+        foreach ($expectedRule in $expectedRules) {
+            $expectedSid = $expectedRule.IdentityReference.Translate(
+                [System.Security.Principal.SecurityIdentifier]
+            ).Value
+            $matchingRules = @($existingRules | Where-Object {
+                -not $_.IsInherited -and
+                $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value -eq $expectedSid -and
+                $_.FileSystemRights -eq $expectedRule.FileSystemRights -and
+                $_.InheritanceFlags -eq $expectedRule.InheritanceFlags -and
+                $_.PropagationFlags -eq $expectedRule.PropagationFlags -and
+                $_.AccessControlType -eq $expectedRule.AccessControlType
+            })
+            if ($matchingRules.Count -ne 1) {
+                $alreadyPrivate = $false
+                break
+            }
+        }
+    }
+
+    if ($alreadyPrivate) {
+        return
+    }
+
     Set-Acl -LiteralPath $Path -AclObject $acl -ErrorAction Stop
 }
 
