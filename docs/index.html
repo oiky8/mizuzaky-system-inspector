@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Mizuzaky README</title>
+</head>
+<body>
+  <p id="message">Opening the README in your browser language…</p>
+  <p><a id="fallback" href="https://github.com/oiky8/mizuzaky-system-inspector">Open the English README</a></p>
+  <noscript>
+    <p>JavaScript is required for automatic language selection. Use the language links in the README instead.</p>
+  </noscript>
+  <script>
+    (function () {
+      "use strict";
+
+      var repositoryUrl = "https://github.com/oiky8/mizuzaky-system-inspector";
+      var browserLanguages = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || "en"];
+      var targetLanguage = "en";
+
+      for (var index = 0; index < browserLanguages.length; index++) {
+        var requestedLanguage = String(browserLanguages[index]).toLowerCase();
+        if (!/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(requestedLanguage)) {
+          continue;
+        }
+        var languageParts = requestedLanguage.split("-");
+        if (languageParts[0] === "zh") {
+          if (languageParts.indexOf("hant") !== -1 ||
+              languageParts.indexOf("tw") !== -1 ||
+              languageParts.indexOf("hk") !== -1 ||
+              languageParts.indexOf("mo") !== -1) {
+            targetLanguage = "zh-TW";
+          } else {
+            targetLanguage = "zh-CN";
+          }
+        } else {
+          targetLanguage = languageParts[0];
+        }
+        break;
+      }
+
+      var destination;
+      if (targetLanguage === "en") {
+        destination = repositoryUrl;
+      } else {
+        destination = new URL("https://translate.google.com/translate");
+        destination.searchParams.set("sl", "auto");
+        destination.searchParams.set("tl", targetLanguage);
+        destination.searchParams.set("u", repositoryUrl);
+        destination = destination.toString();
+        document.getElementById("message").textContent =
+          "Opening Google Translate. The public repository URL will be sent to Google.";
+        document.getElementById("fallback").href = destination;
+        document.getElementById("fallback").textContent =
+          "Continue to the translated README";
+      }
+
+      window.location.replace(destination);
+    }());
+  </script>
+</body>
+</html>
