@@ -48,7 +48,10 @@
     "ReportCount": "Issue count: {0}",
     "FileWatchUnavailable": "Local file monitoring is unavailable; download and Git change coverage is off.",
     "FileWatchCoverageWarning": "File monitoring may have missed changes. Results may be incomplete.",
-    "FileReviewFlagged": "Local review found potential risks in {0} file(s); see the local log. Nothing was changed."
+    "FileReviewFlagged": "Local review found potential risks in {0} file(s); see the local log. Nothing was changed.",
+    "NotificationAllGood": "System check completed. Everything looks good.",
+    "NotificationIssues": "System check completed: {0} issue(s) found. Open the app for details.",
+    "NotificationFailed": "System check failed. Open the app to view details."
   },
   "vi": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -99,7 +102,10 @@
     "ReportCount": "S\u1ed1 l\u01b0\u1ee3ng v\u1ea5n \u0111\u1ec1: {0}",
     "FileWatchUnavailable": "Kh\u00f4ng th\u1ec3 theo d\u00f5i t\u1ec7p c\u1ee5c b\u1ed9; kh\u00f4ng th\u1ec3 theo d\u00f5i t\u1ec7p t\u1ea3i v\u1ec1 v\u00e0 thay \u0111\u1ed5i Git.",
     "FileWatchCoverageWarning": "C\u00f3 th\u1ec3 \u0111\u00e3 b\u1ecf l\u1ee1 m\u1ed9t s\u1ed1 thay \u0111\u1ed5i t\u1ec7p; k\u1ebft qu\u1ea3 c\u00f3 th\u1ec3 ch\u01b0a \u0111\u1ea7y \u0111\u1ee7.",
-    "FileReviewFlagged": "Ki\u1ec3m tra c\u1ee5c b\u1ed9 ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u r\u1ee7i ro trong {0} t\u1ec7p; xem nh\u1eadt k\u00fd c\u1ee5c b\u1ed9. Kh\u00f4ng c\u00f3 t\u1ec7p n\u00e0o b\u1ecb thay \u0111\u1ed5i."
+    "FileReviewFlagged": "Ki\u1ec3m tra c\u1ee5c b\u1ed9 ph\u00e1t hi\u1ec7n d\u1ea5u hi\u1ec7u r\u1ee7i ro trong {0} t\u1ec7p; xem nh\u1eadt k\u00fd c\u1ee5c b\u1ed9. Kh\u00f4ng c\u00f3 t\u1ec7p n\u00e0o b\u1ecb thay \u0111\u1ed5i.",
+    "NotificationAllGood": "\u0110\u00e3 ki\u1ec3m tra xong. M\u1ecdi th\u1ee9 \u0111\u1ec1u \u1ed5n.",
+    "NotificationIssues": "\u0110\u00e3 ki\u1ec3m tra xong: ph\u00e1t hi\u1ec7n {0} v\u1ea5n \u0111\u1ec1. M\u1edf \u1ee9ng d\u1ee5ng \u0111\u1ec3 xem chi ti\u1ebft.",
+    "NotificationFailed": "Ki\u1ec3m tra th\u1ea5t b\u1ea1i. M\u1edf \u1ee9ng d\u1ee5ng \u0111\u1ec3 xem chi ti\u1ebft."
   },
   "zh-CN": {
     "AppTitle": "Mizuzaky 系统检查员",
@@ -150,7 +156,10 @@
     "ReportCount": "问题数量：{0}",
     "FileWatchUnavailable": "本地文件监控不可用；无法监控下载和 Git 变更。",
     "FileWatchCoverageWarning": "文件监控可能遗漏了部分变更，结果可能不完整。",
-    "FileReviewFlagged": "本地检查在 {0} 个文件中发现潜在风险；请查看本地日志。文件未被修改。"
+    "FileReviewFlagged": "本地检查在 {0} 个文件中发现潜在风险；请查看本地日志。文件未被修改。",
+    "NotificationAllGood": "\u7cfb\u7edf\u68c0\u67e5\u5df2\u5b8c\u6210\uff0c\u4e00\u5207\u6b63\u5e38\u3002",
+    "NotificationIssues": "\u7cfb\u7edf\u68c0\u67e5\u5df2\u5b8c\u6210\uff1a\u53d1\u73b0 {0} \u4e2a\u95ee\u9898\u3002\u6253\u5f00\u5e94\u7528\u67e5\u770b\u8be6\u60c5\u3002",
+    "NotificationFailed": "\u7cfb\u7edf\u68c0\u67e5\u5931\u8d25\u3002\u6253\u5f00\u5e94\u7528\u67e5\u770b\u8be6\u60c5\u3002"
   },
   "zh-TW": {
     "AppTitle": "Mizuzaky 系統檢查員",
@@ -201,7 +210,10 @@
     "ReportCount": "問題數量：{0}",
     "FileWatchUnavailable": "本機檔案監控無法使用；無法監控下載和 Git 變更。",
     "FileWatchCoverageWarning": "檔案監控可能遺漏部分變更，結果可能不完整。",
-    "FileReviewFlagged": "本機檢查在 {0} 個檔案中發現潛在風險；請查看本機記錄。檔案未被修改。"
+    "FileReviewFlagged": "本機檢查在 {0} 個檔案中發現潛在風險；請查看本機記錄。檔案未被修改。",
+    "NotificationAllGood": "\u7cfb\u7d71\u6aa2\u67e5\u5df2\u5b8c\u6210\uff0c\u4e00\u5207\u6b63\u5e38\u3002",
+    "NotificationIssues": "\u7cfb\u7d71\u6aa2\u67e5\u5df2\u5b8c\u6210\uff1a\u767c\u73fe {0} \u500b\u554f\u984c\u3002\u958b\u555f\u61c9\u7528\u7a0b\u5f0f\u67e5\u770b\u8a73\u60c5\u3002",
+    "NotificationFailed": "\u7cfb\u7d71\u6aa2\u67e5\u5931\u6557\u3002\u958b\u555f\u61c9\u7528\u7a0b\u5f0f\u67e5\u770b\u8a73\u60c5\u3002"
   },
   "es": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -252,7 +264,10 @@
     "ReportCount": "Cantidad de incidencias: {0}",
     "FileWatchUnavailable": "El monitor local no está disponible; no se supervisan las descargas ni los cambios de Git.",
     "FileWatchCoverageWarning": "El monitor pudo omitir cambios. Los resultados pueden estar incompletos.",
-    "FileReviewFlagged": "La revisión local detectó riesgos potenciales en {0} archivo(s); consulta el registro local. No se modificó ningún archivo."
+    "FileReviewFlagged": "La revisión local detectó riesgos potenciales en {0} archivo(s); consulta el registro local. No se modificó ningún archivo.",
+    "NotificationAllGood": "Comprobación completada. Todo parece estar bien.",
+    "NotificationIssues": "Comprobación completada: se encontraron {0} problema(s). Abre la aplicación para ver los detalles.",
+    "NotificationFailed": "La comprobación falló. Abre la aplicación para ver los detalles."
   },
   "fr": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -303,7 +318,10 @@
     "ReportCount": "Nombre de problèmes : {0}",
     "FileWatchUnavailable": "La surveillance locale des fichiers est indisponible ; les téléchargements et changements Git ne sont pas suivis.",
     "FileWatchCoverageWarning": "La surveillance a peut-être manqué des changements. Les résultats peuvent être incomplets.",
-    "FileReviewFlagged": "L’analyse locale a signalé des risques potentiels dans {0} fichier(s) ; consultez le journal local. Aucun fichier n’a été modifié."
+    "FileReviewFlagged": "L’analyse locale a signalé des risques potentiels dans {0} fichier(s) ; consultez le journal local. Aucun fichier n’a été modifié.",
+    "NotificationAllGood": "V\u00e9rification termin\u00e9e. Tout semble normal.",
+    "NotificationIssues": "V\u00e9rification termin\u00e9e\u00a0: {0} probl\u00e8me(s) d\u00e9tect\u00e9(s). Ouvrez l\u2019application pour les d\u00e9tails.",
+    "NotificationFailed": "\u00c9chec de la v\u00e9rification. Ouvrez l\u2019application pour les d\u00e9tails."
   },
   "de": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -354,7 +372,10 @@
     "ReportCount": "Anzahl der Probleme: {0}",
     "FileWatchUnavailable": "Die lokale Dateiüberwachung ist nicht verfügbar; Downloads und Git-Änderungen werden nicht überwacht.",
     "FileWatchCoverageWarning": "Die Dateiüberwachung hat möglicherweise Änderungen übersehen. Die Ergebnisse sind eventuell unvollständig.",
-    "FileReviewFlagged": "Die lokale Prüfung hat potenzielle Risiken in {0} Datei(en) gefunden; siehe lokales Protokoll. Es wurde nichts geändert."
+    "FileReviewFlagged": "Die lokale Prüfung hat potenzielle Risiken in {0} Datei(en) gefunden; siehe lokales Protokoll. Es wurde nichts geändert.",
+    "NotificationAllGood": "Systempr\u00fcfung abgeschlossen. Alles sieht gut aus.",
+    "NotificationIssues": "Systempr\u00fcfung abgeschlossen: {0} Problem(e) gefunden. \u00d6ffnen Sie die App f\u00fcr Details.",
+    "NotificationFailed": "Systempr\u00fcfung fehlgeschlagen. \u00d6ffnen Sie die App f\u00fcr Details."
   },
   "ja": {
     "AppTitle": "Mizuzaky システムインスペクター",
@@ -405,7 +426,10 @@
     "ReportCount": "問題数：{0}",
     "FileWatchUnavailable": "ローカルファイル監視を利用できません。ダウンロードと Git の変更は監視されません。",
     "FileWatchCoverageWarning": "ファイルの変更を見逃した可能性があります。結果は不完全な場合があります。",
-    "FileReviewFlagged": "ローカル検査で {0} 個のファイルに潜在的なリスクが見つかりました。ローカルログを確認してください。ファイルは変更されていません。"
+    "FileReviewFlagged": "ローカル検査で {0} 個のファイルに潜在的なリスクが見つかりました。ローカルログを確認してください。ファイルは変更されていません。",
+    "NotificationAllGood": "\u30b7\u30b9\u30c6\u30e0\u30c1\u30a7\u30c3\u30af\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\u3002\u554f\u984c\u306f\u3042\u308a\u307e\u305b\u3093\u3002",
+    "NotificationIssues": "\u30b7\u30b9\u30c6\u30e0\u30c1\u30a7\u30c3\u30af\u304c\u5b8c\u4e86\u3057\u3001{0}\u4ef6\u306e\u554f\u984c\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f\u3002\u8a73\u7d30\u306f\u30a2\u30d7\u30ea\u3092\u958b\u3044\u3066\u3054\u78ba\u8a8d\u304f\u3060\u3055\u3044\u3002",
+    "NotificationFailed": "\u30b7\u30b9\u30c6\u30e0\u30c1\u30a7\u30c3\u30af\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u8a73\u7d30\u306f\u30a2\u30d7\u30ea\u3092\u958b\u3044\u3066\u3054\u78ba\u8a8d\u304f\u3060\u3055\u3044\u3002"
   },
   "ko": {
     "AppTitle": "Mizuzaky 시스템 검사기",
@@ -456,7 +480,10 @@
     "ReportCount": "문제 수: {0}",
     "FileWatchUnavailable": "로컬 파일 모니터링을 사용할 수 없어 다운로드와 Git 변경을 감시하지 않습니다.",
     "FileWatchCoverageWarning": "일부 파일 변경을 놓쳤을 수 있습니다. 결과가 불완전할 수 있습니다.",
-    "FileReviewFlagged": "로컬 검사에서 {0}개 파일의 잠재적 위험을 발견했습니다. 로컬 로그를 확인하세요. 파일은 변경되지 않았습니다."
+    "FileReviewFlagged": "로컬 검사에서 {0}개 파일의 잠재적 위험을 발견했습니다. 로컬 로그를 확인하세요. 파일은 변경되지 않았습니다.",
+    "NotificationAllGood": "\uc2dc\uc2a4\ud15c \uac80\uc0ac\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ubaa8\ub4e0 \ud56d\ubaa9\uc774 \uc815\uc0c1\uc785\ub2c8\ub2e4.",
+    "NotificationIssues": "\uc2dc\uc2a4\ud15c \uac80\uc0ac \uc644\ub8cc: \ubb38\uc81c {0}\uac74\uc744 \ubc1c\uacac\ud588\uc2b5\ub2c8\ub2e4. \uc790\uc138\ud55c \ub0b4\uc6a9\uc740 \uc571\uc744 \uc5ec\uc138\uc694.",
+    "NotificationFailed": "\uc2dc\uc2a4\ud15c \uac80\uc0ac\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc790\uc138\ud55c \ub0b4\uc6a9\uc740 \uc571\uc744 \uc5ec\uc138\uc694."
   },
   "pt": {
     "AppTitle": "Mizuzaky System Inspector",
@@ -507,7 +534,10 @@
     "ReportCount": "Quantidade de problemas: {0}",
     "FileWatchUnavailable": "A monitorização local de ficheiros está indisponível; transferências e alterações do Git não são monitorizadas.",
     "FileWatchCoverageWarning": "A monitorização pode ter perdido alterações. Os resultados podem estar incompletos.",
-    "FileReviewFlagged": "A análise local encontrou riscos potenciais em {0} ficheiro(s); consulte o registo local. Nada foi alterado."
+    "FileReviewFlagged": "A análise local encontrou riscos potenciais em {0} ficheiro(s); consulte o registo local. Nada foi alterado.",
+    "NotificationAllGood": "Verifica\u00e7\u00e3o conclu\u00edda. Est\u00e1 tudo bem.",
+    "NotificationIssues": "Verifica\u00e7\u00e3o conclu\u00edda: foram encontrados {0} problema(s). Abra a aplica\u00e7\u00e3o para ver os detalhes.",
+    "NotificationFailed": "A verifica\u00e7\u00e3o falhou. Abra a aplica\u00e7\u00e3o para ver os detalhes."
   },
   "ru": {
     "AppTitle": "Mizuzaky — проверка системы",
@@ -558,7 +588,10 @@
     "ReportCount": "Количество проблем: {0}",
     "FileWatchUnavailable": "Локальный мониторинг файлов недоступен; загрузки и изменения Git не отслеживаются.",
     "FileWatchCoverageWarning": "Мониторинг мог пропустить изменения. Результаты могут быть неполными.",
-    "FileReviewFlagged": "Локальная проверка обнаружила потенциальные риски в файлах: {0}. См. локальный журнал. Файлы не изменялись."
+    "FileReviewFlagged": "Локальная проверка обнаружила потенциальные риски в файлах: {0}. См. локальный журнал. Файлы не изменялись.",
+    "NotificationAllGood": "\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0441\u0438\u0441\u0442\u0435\u043c\u044b \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0430. \u0412\u0441\u0451 \u0432 \u043f\u043e\u0440\u044f\u0434\u043a\u0435.",
+    "NotificationIssues": "\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0441\u0438\u0441\u0442\u0435\u043c\u044b \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0430: \u043d\u0430\u0439\u0434\u0435\u043d\u043e \u043f\u0440\u043e\u0431\u043b\u0435\u043c: {0}. \u041e\u0442\u043a\u0440\u043e\u0439\u0442\u0435 \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0431\u043d\u043e\u0441\u0442\u0435\u0439.",
+    "NotificationFailed": "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0443. \u041e\u0442\u043a\u0440\u043e\u0439\u0442\u0435 \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u043f\u043e\u0434\u0440\u043e\u0431\u043d\u043e\u0441\u0442\u0435\u0439."
   },
   "ar": {
     "AppTitle": "Mizuzaky لفحص النظام",
@@ -609,7 +642,10 @@
     "ReportCount": "عدد المشكلات: {0}",
     "FileWatchUnavailable": "مراقبة الملفات المحلية غير متاحة؛ لن تتم مراقبة التنزيلات وتغييرات Git.",
     "FileWatchCoverageWarning": "قد تكون مراقبة الملفات قد فاتتها بعض التغييرات. قد تكون النتائج غير مكتملة.",
-    "FileReviewFlagged": "رصد الفحص المحلي مخاطر محتملة في {0} ملف. راجع السجل المحلي. لم يتم تغيير أي ملف."
+    "FileReviewFlagged": "رصد الفحص المحلي مخاطر محتملة في {0} ملف. راجع السجل المحلي. لم يتم تغيير أي ملف.",
+    "NotificationAllGood": "\u0627\u0643\u062a\u0645\u0644 \u0641\u062d\u0635 \u0627\u0644\u0646\u0638\u0627\u0645. \u0643\u0644 \u0634\u064a\u0621 \u064a\u0628\u062f\u0648 \u062c\u064a\u062f\u064b\u0627.",
+    "NotificationIssues": "\u0627\u0643\u062a\u0645\u0644 \u0641\u062d\u0635 \u0627\u0644\u0646\u0638\u0627\u0645: \u062a\u0645 \u0627\u0643\u062a\u0634\u0627\u0641 {0} \u0645\u0634\u0643\u0644\u0629. \u0627\u0641\u062a\u062d \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644.",
+    "NotificationFailed": "\u0641\u0634\u0644 \u0641\u062d\u0635 \u0627\u0644\u0646\u0638\u0627\u0645. \u0627\u0641\u062a\u062d \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0641\u0627\u0635\u064a\u0644."
   },
   "hi": {
     "AppTitle": "Mizuzaky सिस्टम निरीक्षक",
@@ -660,7 +696,10 @@
     "ReportCount": "समस्याओं की संख्या: {0}",
     "FileWatchUnavailable": "स्थानीय फ़ाइल निगरानी उपलब्ध नहीं है; डाउनलोड और Git बदलावों की निगरानी बंद है।",
     "FileWatchCoverageWarning": "फ़ाइल निगरानी कुछ बदलाव चूक गई हो सकती है। परिणाम अधूरे हो सकते हैं।",
-    "FileReviewFlagged": "स्थानीय जाँच में {0} फ़ाइल(ों) में संभावित जोखिम मिले; स्थानीय लॉग देखें। कोई फ़ाइल बदली नहीं गई।"
+    "FileReviewFlagged": "स्थानीय जाँच में {0} फ़ाइल(ों) में संभावित जोखिम मिले; स्थानीय लॉग देखें। कोई फ़ाइल बदली नहीं गई।",
+    "NotificationAllGood": "\u0938\u093f\u0938\u094d\u091f\u092e \u091c\u093e\u0901\u091a \u092a\u0942\u0930\u0940 \u0939\u0941\u0908\u0964 \u0938\u092d\u0940 \u0915\u0941\u091b \u0920\u0940\u0915 \u0932\u0917 \u0930\u0939\u093e \u0939\u0948\u0964",
+    "NotificationIssues": "\u0938\u093f\u0938\u094d\u091f\u092e \u091c\u093e\u0901\u091a \u092a\u0942\u0930\u0940: {0} \u0938\u092e\u0938\u094d\u092f\u093e\u090f\u0901 \u092e\u093f\u0932\u0940\u0902\u0964 \u0935\u093f\u0935\u0930\u0923 \u0926\u0947\u0916\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u090f\u092a \u0916\u094b\u0932\u0947\u0902\u0964",
+    "NotificationFailed": "\u0938\u093f\u0938\u094d\u091f\u092e \u091c\u093e\u0901\u091a \u0935\u093f\u092b\u0932 \u0930\u0939\u0940\u0964 \u0935\u093f\u0935\u0930\u0923 \u0926\u0947\u0916\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u090f\u092a \u0916\u094b\u0932\u0947\u0902\u0964"
   },
   "id": {
     "AppTitle": "Pemeriksa Sistem Mizuzaky",
@@ -711,7 +750,10 @@
     "ReportCount": "Jumlah masalah: {0}",
     "FileWatchUnavailable": "Pemantauan file lokal tidak tersedia; unduhan dan perubahan Git tidak dipantau.",
     "FileWatchCoverageWarning": "Pemantauan file mungkin melewatkan perubahan. Hasilnya mungkin tidak lengkap.",
-    "FileReviewFlagged": "Pemeriksaan lokal menemukan potensi risiko pada {0} file; lihat log lokal. Tidak ada file yang diubah."
+    "FileReviewFlagged": "Pemeriksaan lokal menemukan potensi risiko pada {0} file; lihat log lokal. Tidak ada file yang diubah.",
+    "NotificationAllGood": "Pemeriksaan sistem selesai. Semuanya tampak baik.",
+    "NotificationIssues": "Pemeriksaan sistem selesai: ditemukan {0} masalah. Buka aplikasi untuk melihat detail.",
+    "NotificationFailed": "Pemeriksaan sistem gagal. Buka aplikasi untuk melihat detail."
   },
   "th": {
     "AppTitle": "Mizuzaky ตัวตรวจสอบระบบ",
@@ -762,6 +804,9 @@
     "ReportCount": "จำนวนปัญหา: {0}",
     "FileWatchUnavailable": "ไม่มีการตรวจสอบไฟล์ในเครื่อง จึงไม่ติดตามไฟล์ดาวน์โหลดและการเปลี่ยนแปลงของ Git",
     "FileWatchCoverageWarning": "การตรวจสอบไฟล์อาจพลาดบางการเปลี่ยนแปลง ผลลัพธ์อาจไม่ครบถ้วน",
-    "FileReviewFlagged": "การตรวจสอบในเครื่องพบความเสี่ยงที่อาจเกิดขึ้นใน {0} ไฟล์ โปรดดูบันทึกในเครื่อง ไม่มีการแก้ไขไฟล์"
+    "FileReviewFlagged": "การตรวจสอบในเครื่องพบความเสี่ยงที่อาจเกิดขึ้นใน {0} ไฟล์ โปรดดูบันทึกในเครื่อง ไม่มีการแก้ไขไฟล์",
+    "NotificationAllGood": "\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e30\u0e1a\u0e1a\u0e40\u0e2a\u0e23\u0e47\u0e08\u0e2a\u0e34\u0e49\u0e19 \u0e17\u0e38\u0e01\u0e2d\u0e22\u0e48\u0e32\u0e07\u0e1b\u0e01\u0e15\u0e34\u0e14\u0e35",
+    "NotificationIssues": "\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e30\u0e1a\u0e1a\u0e40\u0e2a\u0e23\u0e47\u0e08\u0e2a\u0e34\u0e49\u0e19: \u0e1e\u0e1a\u0e1b\u0e31\u0e0d\u0e2b\u0e32 {0} \u0e23\u0e32\u0e22\u0e01\u0e32\u0e23 \u0e40\u0e1b\u0e34\u0e14\u0e41\u0e2d\u0e1b\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e14\u0e39\u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14",
+    "NotificationFailed": "\u0e01\u0e32\u0e23\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e30\u0e1a\u0e1a\u0e25\u0e49\u0e21\u0e40\u0e2b\u0e25\u0e27 \u0e40\u0e1b\u0e34\u0e14\u0e41\u0e2d\u0e1b\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e14\u0e39\u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14"
   }
 }

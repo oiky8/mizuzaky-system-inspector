@@ -11,6 +11,8 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Security
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
 if (-not ('MizuzakyFileChangeMonitor' -as [type])) {
     Add-Type -TypeDefinition @'
@@ -209,6 +211,7 @@ $catalogPath = Join-Path (Split-Path -Parent $PSCommandPath) 'error-catalog.json
 $startupLink = Join-Path ([Environment]::GetFolderPath('Startup')) 'Mizuzaky System Inspector.lnk'
 $scriptPath = $PSCommandPath
 $script:window = $null
+$script:notificationIcon = $null
 $script:statusText = $null
 $script:logText = $null
 $script:startupButton = $null
@@ -1136,6 +1139,25 @@ function Get-SystemLoad {
     }
 }
 
+function Show-HealthNotification {
+    param(
+        [Parameter(Mandatory)][string]$Message,
+        [System.Windows.Forms.ToolTipIcon]$Icon = [System.Windows.Forms.ToolTipIcon]::Info
+    )
+
+    if (-not $script:notificationIcon -or -not $script:notificationIcon.Visible) {
+        return
+    }
+
+    try {
+        $script:notificationIcon.ShowBalloonTip(5000, (Get-Text 'AppTitle'), $Message, $Icon)
+        Write-AssistantLog 'Displayed a Windows notification-area health-check summary.'
+    }
+    catch {
+        Write-AssistantLog ('Could not display a Windows notification: {0}' -f $_.Exception.Message)
+    }
+}
+
 function Invoke-ScheduledHealthCheck {
     if (-not $script:prioritySet) {
         $script:statusText.Text = Get-Text 'PriorityPaused'
@@ -1168,6 +1190,7 @@ function Invoke-ScheduledHealthCheck {
     catch {
         $script:statusText.Text = Get-Text 'CheckFailed'
         Write-AssistantLog ('Health check failed: {0}' -f $_.Exception.Message)
+        Show-HealthNotification -Message (Get-Text 'NotificationFailed') -Icon ([System.Windows.Forms.ToolTipIcon]::Error)
         Send-HealthReport -Issues @('Health check failed; details are recorded in the local log.')
     }
     finally {
@@ -1355,6 +1378,14 @@ function Invoke-HealthCheck {
     }
 
     Send-HealthReport -Issues @($issues.ToArray())
+    if ($issues.Count -eq 0) {
+        Show-HealthNotification -Message (Get-Text 'NotificationAllGood')
+    }
+    else {
+        Show-HealthNotification `
+            -Message ((Get-Text 'NotificationIssues') -f $issues.Count) `
+            -Icon ([System.Windows.Forms.ToolTipIcon]::Warning)
+    }
 }
 
 function Update-StartupButton {
@@ -1433,6 +1464,22 @@ $window.FlowDirection = if ($script:language -eq 'ar') {
 else {
     [System.Windows.FlowDirection]::LeftToRight
 }
+
+$script:notificationIcon = New-Object System.Windows.Forms.NotifyIcon
+$script:notificationIcon.Icon = [System.Drawing.SystemIcons]::Information
+$script:notificationIcon.Text = Get-Text 'AppTitle'
+$script:notificationIcon.Visible = $true
+$script:notificationIcon.Add_BalloonTipShown({
+    Write-AssistantLog 'Windows displayed a health-check notification.'
+})
+$script:notificationIcon.Add_BalloonTipClicked({
+    $script:window.Show()
+    $script:window.Activate()
+})
+$script:notificationIcon.Add_DoubleClick({
+    $script:window.Show()
+    $script:window.Activate()
+})
 
 $panel = New-Object System.Windows.Controls.StackPanel
 $panel.Margin = New-Object System.Windows.Thickness(16)
@@ -1558,6 +1605,10 @@ $window.Add_Closed({
     }
     if ($script:fileMonitor) {
         $script:fileMonitor.Dispose()
+    }
+    if ($script:notificationIcon) {
+        $script:notificationIcon.Visible = $false
+        $script:notificationIcon.Dispose()
     }
 })
 $window.Add_ContentRendered({ Invoke-ScheduledHealthCheck })
