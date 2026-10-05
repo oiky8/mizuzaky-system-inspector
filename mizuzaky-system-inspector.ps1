@@ -203,7 +203,9 @@ public sealed class MizuzakyFileChangeMonitor : IDisposable
 }
 
 $appDirectory = Join-Path $env:LOCALAPPDATA 'MizuzakySystemInspector'
-$logPath = Join-Path $appDirectory 'assistant.log'
+$logPath = Join-Path $appDirectory 'activity.log'
+$repairLogPath = Join-Path $appDirectory 'repair.log'
+$legacyLogPath = Join-Path $appDirectory 'assistant.log'
 $emailConfigPath = Join-Path $appDirectory 'email-config.json'
 $emailCredentialPath = Join-Path $appDirectory 'email-credential.xml'
 $lastReportPath = Join-Path $appDirectory 'last-report.dat'
@@ -621,16 +623,167 @@ catch {
     exit 1
 }
 
+function ConvertTo-RedactedLogMessage {
+    param([Parameter(Mandatory)][string]$Message)
+
+    $safeMessage = $Message -replace '[\r\n\t]+', ' '
+    if ($safeMessage.Length -gt 4096) {
+        $safeMessage = $safeMessage.Substring(0, 4096) + ' [truncated]'
+    }
+
+    $safeMessage = $safeMessage -replace '(?i)\bBearer\s+[A-Za-z0-9._~+/-]+=*', 'Bearer [REDACTED]'
+    $safeMessage = $safeMessage -replace '(?i)\b(password|passwd|pwd|token|secret|authorization|cookie|session|api[_-]?key|access[_-]?key)\b(\s*[:=]\s*)("[^"]*"|''[^'']*''|[^\s,;]+)', '$1$2[REDACTED]'
+    $safeMessage = $safeMessage -replace '(?i)([?&](?:password|passwd|pwd|token|secret|session|api[_-]?key|access[_-]?key)=)[^&\s]+', '$1[REDACTED]'
+    $safeMessage = $safeMessage -replace '(?i)\b(AKIA|ASIA)[A-Z0-9]{16}\b', '[REDACTED-CLOUD-KEY]'
+    $safeMessage = $safeMessage -replace '\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b', '[REDACTED-JWT]'
+    $safeMessage = $safeMessage -replace '(?i)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----', '[REDACTED-PRIVATE-KEY]'
+    $safeMessage = $safeMessage -replace '(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b', '[REDACTED-EMAIL]'
+    $safeMessage = $safeMessage -replace '(?<!\d)(?:\d[ -]?){13,19}(?!\d)', '[REDACTED-NUMBER]'
+    $safeMessage = $safeMessage -replace '(?i)\bhttps?://[^\s''"<>]+', '[REDACTED-URL]'
+    $safeMessage = $safeMessage -replace '(?i)(?:[A-Z]:\\|\\\\[^\\\s]+\\)[^\s''"]*', '[REDACTED-PATH]'
+    $safeMessage = $safeMessage -replace '(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])', '[REDACTED-IP]'
+    $safeMessage = $safeMessage -replace '(?i)\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b', '[REDACTED-MAC]'
+    $safeMessage = $safeMessage -replace '(?i)\b(?:[a-f0-9]{32,}|[A-Za-z0-9_-]{40,})\b', '[REDACTED-OPAQUE-TOKEN]'
+    $safeMessage = $safeMessage -replace '(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{24,}={0,2}(?![A-Za-z0-9+/=])', '[REDACTED-ENCODED-TOKEN]'
+    $safeMessage = $safeMessage -replace '(?<!\d)\+?\d[\d .()-]{8,}\d(?!\d)', '[REDACTED-PHONE]'
+    return $safeMessage
+}
+
+function Protect-LogEntry {
+    param([Parameter(Mandatory)][string]$Entry)
+
+    $entropy = [Text.Encoding]::UTF8.GetBytes('mizuzaky-system-inspector:private-log:v1')
+    $bytes = [Text.Encoding]::UTF8.GetBytes($Entry)
+    $protected = [Security.Cryptography.ProtectedData]::Protect(
+        $bytes,
+        $entropy,
+        [Security.Cryptography.DataProtectionScope]::CurrentUser
+    )
+    return 'MSI-LOG-V1:' + [Convert]::ToBase64String($protected)
+}
+
+function Unprotect-LogEntry {
+    param([Parameter(Mandatory)][string]$Record)
+
+    if (-not $Record.StartsWith('MSI-LOG-V1:', [StringComparison]::Ordinal)) {
+        return ConvertTo-RedactedLogMessage -Message $Record
+    }
+
+    $entropy = [Text.Encoding]::UTF8.GetBytes('mizuzaky-system-inspector:private-log:v1')
+    $protected = [Convert]::FromBase64String($Record.Substring('MSI-LOG-V1:'.Length))
+    $bytes = [Security.Cryptography.ProtectedData]::Unprotect(
+        $protected,
+        $entropy,
+        [Security.Cryptography.DataProtectionScope]::CurrentUser
+    )
+    return ConvertTo-RedactedLogMessage -Message ([Text.Encoding]::UTF8.GetString($bytes))
+}
+
+function Get-PrivateLogEntries {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return @()
+    }
+
+    Protect-PrivateFile -Path $Path
+    $entries = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($record in [IO.File]::ReadAllLines($Path, [Text.Encoding]::ASCII)) {
+        if ($record.StartsWith('MSI-LOG-V1:', [StringComparison]::Ordinal)) {
+            $entries.Add((Unprotect-LogEntry -Record $record))
+        }
+        else {
+            $entries.Add((ConvertTo-RedactedLogMessage -Message $record))
+        }
+    }
+    return @($entries.ToArray())
+}
+
+function Save-PrivateLogEntries {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [AllowEmptyCollection()]
+        [Parameter(Mandatory)][string[]]$Entries
+    )
+
+    $maximumLogBytes = 1MB
+    $maximumLogEntries = 2000
+    $retainedEntries = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($entry in $Entries | Select-Object -Last $maximumLogEntries) {
+        $retainedEntries.Add((ConvertTo-RedactedLogMessage -Message $entry))
+    }
+
+    $protectedRecords = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($entry in $retainedEntries) {
+        $protectedRecords.Add((Protect-LogEntry -Entry $entry))
+    }
+    while ($protectedRecords.Count -gt 1 -and (($protectedRecords | ForEach-Object { [Text.Encoding]::ASCII.GetByteCount($_) + 2 } | Measure-Object -Sum).Sum -gt $maximumLogBytes)) {
+        $protectedRecords.RemoveAt(0)
+    }
+
+    $temporaryPath = Join-Path (Split-Path -Parent $Path) ('.{0}.{1}.tmp' -f [IO.Path]::GetFileName($Path), [guid]::NewGuid().ToString('N'))
+    $backupPath = $temporaryPath + '.bak'
+    try {
+        [IO.File]::WriteAllLines($temporaryPath, $protectedRecords.ToArray(), [Text.Encoding]::ASCII)
+        Protect-PrivateFile -Path $temporaryPath
+        if (Test-Path -LiteralPath $Path -PathType Leaf) {
+            Protect-PrivateFile -Path $Path
+            [IO.File]::Replace($temporaryPath, $Path, $backupPath)
+            Protect-PrivateFile -Path $backupPath
+            Remove-Item -LiteralPath $backupPath -Force -ErrorAction Stop
+        }
+        else {
+            [IO.File]::Move($temporaryPath, $Path)
+        }
+        Protect-PrivateFile -Path $Path
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+            Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction Stop
+        }
+        if (Test-Path -LiteralPath $backupPath -PathType Leaf) {
+            Remove-Item -LiteralPath $backupPath -Force -ErrorAction Stop
+        }
+    }
+}
+
+function Write-PrivateLogEntry {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Message
+    )
+
+    $entry = '{0}  {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), (ConvertTo-RedactedLogMessage -Message $Message)
+    $entries = @(Get-PrivateLogEntries -Path $Path) + @($entry)
+    Save-PrivateLogEntries -Path $Path -Entries $entries
+}
+
 function Write-AssistantLog {
     param([Parameter(Mandatory)][string]$Message)
 
-    $entry = '{0}  {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
-    Add-Content -LiteralPath $logPath -Value $entry -Encoding UTF8
-    Protect-PrivateFile -Path $logPath
-
+    Write-PrivateLogEntry -Path $logPath -Message $Message
     if ($script:logText) {
-        $script:logText.Text = (Get-Content -LiteralPath $logPath -Tail 6 -ErrorAction Stop) -join [Environment]::NewLine
+        $script:logText.Text = @(Get-PrivateLogEntries -Path $logPath | Select-Object -Last 6) -join [Environment]::NewLine
     }
+}
+
+function Write-RepairLog {
+    param([Parameter(Mandatory)][string]$Message)
+
+    Write-PrivateLogEntry -Path $repairLogPath -Message $Message
+}
+
+foreach ($existingLogPath in @($logPath, $repairLogPath, $legacyLogPath)) {
+    if (Test-Path -LiteralPath $existingLogPath -PathType Leaf) {
+        $existingEntries = @(Get-PrivateLogEntries -Path $existingLogPath)
+        Save-PrivateLogEntries -Path $existingLogPath -Entries $existingEntries
+    }
+}
+if (Test-Path -LiteralPath $legacyLogPath -PathType Leaf) {
+    $legacyEntries = @(Get-PrivateLogEntries -Path $legacyLogPath)
+    $activityEntries = @(Get-PrivateLogEntries -Path $logPath) + $legacyEntries
+    Save-PrivateLogEntries -Path $logPath -Entries $activityEntries
+    Remove-Item -LiteralPath $legacyLogPath -Force -ErrorAction Stop
 }
 
 function Get-GitRepositoryRoot {
@@ -646,14 +799,96 @@ function Get-GitRepositoryRoot {
     return $null
 }
 
+function Get-DecodedContentVariants {
+    param([Parameter(Mandatory)][string]$Content)
+
+    $maximumCharacters = 262144
+    $maximumVariants = 16
+    $maximumLayers = 5
+    $initialContent = $Content
+    if ($initialContent.Length -gt $maximumCharacters) {
+        $initialContent = $initialContent.Substring(0, $maximumCharacters)
+    }
+
+    $variants = New-Object 'System.Collections.Generic.List[string]'
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+    [void]$seen.Add($initialContent)
+    $variants.Add($initialContent)
+    $appendVariant = {
+        param([string]$Value)
+        if ($Value -and $Value.Length -le $maximumCharacters -and $variants.Count -lt $maximumVariants -and $seen.Add($Value)) {
+            $variants.Add($Value)
+        }
+    }.GetNewClosure()
+
+    $encoding = New-Object System.Text.UTF8Encoding($false, $true)
+    for ($layer = 0; $layer -lt $maximumLayers -and $variants.Count -lt $maximumVariants; $layer++) {
+        $layerEnd = $variants.Count
+        for ($index = 0; $index -lt $layerEnd -and $variants.Count -lt $maximumVariants; $index++) {
+            $candidate = $variants[$index]
+            & $appendVariant ([Net.WebUtility]::HtmlDecode($candidate))
+
+            if ($candidate -match '%[0-9A-Fa-f]{2}') {
+                try {
+                    & $appendVariant ([Uri]::UnescapeDataString($candidate))
+                }
+                catch {
+                    Write-AssistantLog ('Skipped malformed URL-encoded content during static inspection: {0}' -f $_.Exception.Message)
+                }
+            }
+
+            foreach ($escapePattern in @('\\u([0-9A-Fa-f]{4})', '\\x([0-9A-Fa-f]{2})')) {
+                $decodedEscapes = [regex]::Replace($candidate, $escapePattern, {
+                    param($match)
+                    return [char][Convert]::ToInt32($match.Groups[1].Value, 16)
+                })
+                & $appendVariant $decodedEscapes
+            }
+
+            foreach ($match in [regex]::Matches($candidate, '(?<![A-Za-z0-9+/])[A-Za-z0-9+/]{16,}={0,2}(?![A-Za-z0-9+/=])')) {
+                if ($match.Length -gt 87384) {
+                    continue
+                }
+                try {
+                    $bytes = [Convert]::FromBase64String($match.Value)
+                    $decodedBase64 = $encoding.GetString($bytes)
+                    if ($decodedBase64 -notmatch '[\x00-\x08\x0B\x0C\x0E-\x1F]') {
+                        & $appendVariant $decodedBase64
+                    }
+                }
+                catch [FormatException] {
+                    continue
+                }
+                catch [System.Text.DecoderFallbackException] {
+                    continue
+                }
+            }
+        }
+    }
+
+    return @($variants.ToArray())
+}
+
 function Get-CodeRiskFindings {
     param([Parameter(Mandatory)][string]$Content)
 
     $findings = New-Object System.Collections.Generic.List[string]
     $networkPattern = '(?i)DownloadString|Invoke-WebRequest|Invoke-RestMethod|WebClient|requests\.(get|post)|urlopen|fetch\s*\(|curl\s|wget\s'
     $executionPattern = '(?i)Invoke-Expression|\bIEX\b|\beval\s*\(|\bexec\s*\(|Start-Process|subprocess\.(run|Popen|call)|child_process\.(exec|spawn)'
-    $hasNetworkRetrieval = $Content -match $networkPattern
-    $hasDynamicExecution = $Content -match $executionPattern
+    $hasNetworkRetrieval = $false
+    $hasDynamicExecution = $false
+    $hasSecurityControlTampering = $false
+    $hasObfuscatedRisk = $false
+    foreach ($variant in Get-DecodedContentVariants -Content $Content) {
+        $variantHasNetwork = $variant -match $networkPattern
+        $variantHasExecution = $variant -match $executionPattern
+        $hasNetworkRetrieval = $hasNetworkRetrieval -or $variantHasNetwork
+        $hasDynamicExecution = $hasDynamicExecution -or $variantHasExecution
+        $hasSecurityControlTampering = $hasSecurityControlTampering -or ($variant -match '(?i)DisableRealtimeMonitoring|Add-MpPreference.{0,100}Exclusion|Set-MpPreference.{0,100}Disable')
+        if (($variantHasNetwork -or $variantHasExecution) -and $variant -cne $Content) {
+            $hasObfuscatedRisk = $true
+        }
+    }
     if ($hasNetworkRetrieval) {
         $findings.Add('network-or-download-api-present')
     }
@@ -663,10 +898,10 @@ function Get-CodeRiskFindings {
     if ($hasNetworkRetrieval -and $hasDynamicExecution) {
         $findings.Add('network-plus-dynamic-execution')
     }
-    if ($Content -match '(?i)-EncodedCommand|FromBase64String|base64\.b64decode|Buffer\.from.{0,40}base64') {
+    if ($hasObfuscatedRisk -or $Content -match '(?i)-EncodedCommand|FromBase64String|base64\.b64decode|Buffer\.from.{0,40}base64') {
         $findings.Add('encoded-or-obfuscated-command')
     }
-    if ($Content -match '(?i)DisableRealtimeMonitoring|Add-MpPreference.{0,100}Exclusion|Set-MpPreference.{0,100}Disable') {
+    if ($hasSecurityControlTampering) {
         $findings.Add('security-control-tampering')
     }
     return @($findings.ToArray())
@@ -1309,12 +1544,12 @@ function Invoke-HealthCheck {
             [void][System.Net.Dns]::GetHostAddresses('www.microsoft.com')
             $issues.Add(((Get-Text 'DnsRepairSucceeded') -f $dnsRepair.sourceUrl))
             $script:lastRepairPerformed = $true
-            Write-AssistantLog ('Automatic safe repair succeeded: FlushDnsCache. Source: {0}' -f $dnsRepair.sourceUrl)
+            Write-RepairLog ('Automatic safe repair succeeded: FlushDnsCache. Source: {0}' -f $dnsRepair.sourceUrl)
         }
         catch {
             $issues.Add(((Get-Text 'DnsLookupFailed') -f $dnsError))
             $issues.Add(((Get-Text 'DnsRepairFailed') -f $_.Exception.Message, $(if ($dnsRepair) { $dnsRepair.sourceUrl } else { 'No verified source is configured.' })))
-            Write-AssistantLog ('DNS repair was skipped or did not resolve the issue: {0}' -f $_.Exception.Message)
+            Write-RepairLog ('DNS repair was skipped or did not resolve the issue: {0}' -f $_.Exception.Message)
         }
     }
 
