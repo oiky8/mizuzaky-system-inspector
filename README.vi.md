@@ -10,7 +10,7 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 - Đọc lỗi gần đây trong nhật ký **System** và **Application** của Windows rồi đối chiếu với [`error-catalog.json`](./error-catalog.json).
 - Tự chọn giao diện theo ngôn ngữ hiển thị Windows: tiếng Việt, tiếng Trung giản thể/phồn thể, Tây Ban Nha, Pháp, Đức, Nhật, Hàn, Bồ Đào Nha, Nga, Ả Rập, Hindi, Indonesia hoặc Thái; ngôn ngữ khác dùng English dự phòng. Tiếng Ả Rập hiển thị từ phải sang trái. Nội dung giao diện nằm trong [`locales.json`](./locales.json) để có thể bổ sung bản dịch.
 - Nhận diện công cụ phổ biến có trên `PATH`: Python, Node.js (JavaScript/TypeScript), Java, .NET (bao gồm C#), Go, Rust, PHP, Ruby, Perl, Lua, R, Swift và bộ công cụ C/C++. Ứng dụng báo cáo sự kiện crash liên quan trong Windows nhưng không chạy runtime.
-- Theo dõi thay đổi tệp trên các ổ NTFS nội bộ khi ứng dụng đang chạy. Tệp có dấu Windows tải từ Internet được kiểm tra dấu nguồn; tệp thực thi được hỗ trợ sẽ được kiểm tra trạng thái chữ ký Authenticode. Mã nguồn thay đổi trong Git working tree được dò một danh sách ngắn mẫu mã rủi ro. Với ZIP có dấu tải Internet, ứng dụng đọc một số mục mã nguồn nhỏ trực tiếp mà không giải nén. Chỉ báo dấu hiệu theo heuristic; không sửa, chạy, cách ly hay tải tệp/mã nguồn lên mạng.
+- Theo dõi thay đổi chỉ trong `Downloads`, `Desktop` và `Documents` của người dùng hiện tại trên ổ NTFS nội bộ. Chỉ xếp hàng các loại tệp mã nguồn, tệp thực thi và ZIP được hỗ trợ; bỏ qua thư mục phụ thuộc/build/cache như `.git`, `node_modules`, `vendor`, `bin`, `obj`. Tệp có dấu Windows tải từ Internet được kiểm tra dấu nguồn; tệp thực thi được hỗ trợ sẽ được kiểm tra trạng thái chữ ký Authenticode. Mã nguồn thay đổi trong Git working tree nằm trong các thư mục này được dò một danh sách ngắn mẫu mã rủi ro. Với ZIP có dấu tải Internet, ứng dụng đọc một số mục mã nguồn nhỏ trực tiếp mà không giải nén. Chỉ báo dấu hiệu theo heuristic; không sửa, chạy, cách ly hay tải tệp/mã nguồn lên mạng.
 - Kiểm tra lần đầu khi khởi động ứng dụng, sau đó mỗi 3 giờ.
 - Hoãn kiểm tra 15 phút nếu CPU từ 70% trở lên hoặc RAM trống dưới 1,5 GB.
 - Chỉ đặt tiến trình của linh vật ở mức ưu tiên `BelowNormal`; không đóng hoặc thay đổi mức ưu tiên ứng dụng khác.
@@ -19,7 +19,7 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 - Chỉ mở tìm kiếm Microsoft Learn khi người dùng bấm nút. Ứng dụng chỉ gửi mã sự kiện chung, không gửi nội dung nhật ký.
 - Ghi nhật ký cục bộ tại `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Kiểm tra tệp chỉ là heuristic tĩnh nhẹ, không thay thế antivirus, không phải kiểm toán bảo mật đầy đủ và không chứng minh tệp an toàn; vẫn cần Windows Defender hoặc antivirus đáng tin cậy khác. Chữ ký Authenticode hợp lệ không chứng minh phần mềm an toàn; phần mềm không ký cũng không tự động là mã độc. Theo dõi chỉ bắt đầu khi ứng dụng chạy và chỉ bao phủ ổ NTFS nội bộ; không bao gồm ổ mạng/di động/không phải NTFS, tệp đã có trước lúc khởi động hoặc tệp tải về không có dấu Internet Zone của Windows. Mã nguồn Git chỉ được xem xét khi ứng dụng nhận được sự kiện thay đổi; tải hệ thống cao hoặc tràn bộ đệm thông báo có thể làm chậm/bỏ lỡ kiểm tra. Không đọc mã nguồn lớn hơn 256 KB, không kiểm tra chữ ký tệp thực thi lớn hơn 100 MB và không kiểm tra ZIP lớn hơn 50 MB; trong ZIP chỉ xem tối đa 50 mục mã nhỏ. Email không chứa mã nguồn và chỉ báo số lượng. Nhận diện runtime chỉ giới hạn ở các bộ công cụ đã liệt kê và sự kiện crash Windows ghi nhận. Kết quả heuristic có thể báo nhầm hoặc bỏ sót. Ứng dụng không tải hoặc chạy kết quả tìm kiếm hay mã sửa lỗi từ Internet. Lỗi chưa biết, rủi ro cao hoặc có thể ảnh hưởng thành phần khác sẽ chỉ được báo cáo để chủ máy xem xét.
+Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư viện toàn diện. Kiểm tra tệp chỉ là heuristic tĩnh nhẹ, không thay thế antivirus, không phải kiểm toán bảo mật đầy đủ và không chứng minh tệp an toàn; vẫn cần Windows Defender hoặc antivirus đáng tin cậy khác. Chữ ký Authenticode hợp lệ không chứng minh phần mềm an toàn; phần mềm không ký cũng không tự động là mã độc. Theo dõi chỉ bắt đầu khi ứng dụng chạy và chỉ bao phủ `Downloads`, `Desktop`, `Documents` của người dùng hiện tại trên ổ NTFS nội bộ. Không bao gồm tệp ở nơi khác (kể cả Git repo ngoài các thư mục này), ổ mạng/di động/không phải NTFS, tệp đã có trước lúc khởi động hoặc tệp tải về không có dấu Internet Zone của Windows. Mã nguồn Git chỉ được xem xét khi ứng dụng nhận được sự kiện thay đổi; tải hệ thống cao hoặc tràn bộ đệm thông báo có thể làm chậm/bỏ lỡ kiểm tra. Không đọc mã nguồn lớn hơn 256 KB, không kiểm tra chữ ký tệp thực thi lớn hơn 100 MB và không kiểm tra ZIP lớn hơn 50 MB; trong ZIP chỉ xem tối đa 50 mục mã nhỏ. API tải dữ liệu mạng và API thực thi mã động được báo riêng như dấu hiệu yếu; chỉ riêng sự hiện diện của chúng không chứng minh hành vi độc hại. Email không chứa mã nguồn và chỉ báo số lượng. Nhận diện runtime chỉ giới hạn ở các bộ công cụ đã liệt kê và sự kiện crash Windows ghi nhận. Kết quả heuristic có thể báo nhầm hoặc bỏ sót. Ứng dụng không tải hoặc chạy kết quả tìm kiếm hay mã sửa lỗi từ Internet. Lỗi chưa biết, rủi ro cao hoặc có thể ảnh hưởng thành phần khác sẽ chỉ được báo cáo để chủ máy xem xét.
 
 ## Yêu cầu
 
@@ -32,17 +32,19 @@ Kho lỗi là tập mẫu ban đầu có thể chỉnh sửa, không phải thư
 Mở PowerShell trong thư mục dự án và chạy:
 
 ```powershell
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1"
+powershell.exe -NoProfile -STA -File ".\mizuzaky-system-inspector.ps1"
 ```
 
 Chọn **Start with Windows** trong ứng dụng để thêm hoặc gỡ shortcut ở Startup của người dùng hiện tại. Ứng dụng chạy sau khi người dùng đăng nhập, không chạy trước màn hình đăng nhập.
+
+Ứng dụng không bỏ qua Execution Policy của PowerShell. Nếu chính sách chặn script, hãy dùng bản đã ký được phê duyệt hoặc hỏi quản trị viên; không tự làm yếu chính sách do tổ chức quản lý.
 
 ## Báo cáo qua email
 
 Để cấu hình email, chạy script trong PowerShell tương tác:
 
 ```powershell
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
+powershell.exe -NoProfile -STA -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
 ```
 
 Nhập tên máy chủ SMTP công khai của nhà cung cấp, cổng `587`, địa chỉ người gửi/người nhận và tên đăng nhập/mật khẩu ứng dụng SMTP. Ứng dụng từ chối địa chỉ IP, tên máy chủ nội bộ, cổng khác 587 và địa chỉ email kèm tên hiển thị. Ứng dụng dùng SMTP xác thực qua STARTTLS, yêu cầu TLS 1.2 và kiểm tra chứng thư máy chủ/tên máy chủ bằng xác thực chuẩn của Windows/.NET; chứng thư không hợp lệ hoặc tự ký sẽ bị từ chối. Nhà cung cấp không hỗ trợ STARTTLS cổng 587 sẽ không dùng được.

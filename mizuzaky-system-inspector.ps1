@@ -83,12 +83,15 @@ public sealed class MizuzakyFileChangeMonitor : IDisposable
 
     private void OnFileCreated(object sender, FileSystemEventArgs args)
     {
-        if (File.Exists(args.FullPath))
+        if (File.Exists(args.FullPath) && IsReviewablePath(args.FullPath))
             Enqueue(args.FullPath);
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs args)
     {
+        if (!IsReviewablePath(args.FullPath))
+            return;
+
         string extension = Path.GetExtension(args.FullPath).ToLowerInvariant();
         if (IsSourceFile(extension))
         {
@@ -136,9 +139,30 @@ public sealed class MizuzakyFileChangeMonitor : IDisposable
             extension == ".json" || extension == ".toml";
     }
 
+    private static bool IsReviewablePath(string path)
+    {
+        string[] ignoredDirectories = {
+            ".git", "node_modules", "vendor", "bin", "obj", ".venv",
+            "venv", "__pycache__", "dist", "build", ".next"
+        };
+        foreach (string segment in path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            foreach (string ignored in ignoredDirectories)
+            {
+                if (String.Equals(segment, ignored, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+        }
+
+        string extension = Path.GetExtension(path).ToLowerInvariant();
+        return IsSourceFile(extension) || extension == ".exe" || extension == ".dll" ||
+            extension == ".msi" || extension == ".scr" || extension == ".com" ||
+            extension == ".zip";
+    }
+
     private void OnFileRenamed(object sender, RenamedEventArgs args)
     {
-        if (File.Exists(args.FullPath))
+        if (File.Exists(args.FullPath) && IsReviewablePath(args.FullPath))
             Enqueue(args.FullPath);
     }
 
@@ -578,8 +602,16 @@ function Get-CodeRiskFindings {
     $findings = New-Object System.Collections.Generic.List[string]
     $networkPattern = '(?i)DownloadString|Invoke-WebRequest|Invoke-RestMethod|WebClient|requests\.(get|post)|urlopen|fetch\s*\(|curl\s|wget\s'
     $executionPattern = '(?i)Invoke-Expression|\bIEX\b|\beval\s*\(|\bexec\s*\(|Start-Process|subprocess\.(run|Popen|call)|child_process\.(exec|spawn)'
-    if ($Content -match $networkPattern -and $Content -match $executionPattern) {
-        $findings.Add('network-and-dynamic-execution')
+    $hasNetworkRetrieval = $Content -match $networkPattern
+    $hasDynamicExecution = $Content -match $executionPattern
+    if ($hasNetworkRetrieval) {
+        $findings.Add('network-or-download-api-present')
+    }
+    if ($hasDynamicExecution) {
+        $findings.Add('dynamic-execution-api-present')
+    }
+    if ($hasNetworkRetrieval -and $hasDynamicExecution) {
+        $findings.Add('network-plus-dynamic-execution')
     }
     if ($Content -match '(?i)-EncodedCommand|FromBase64String|base64\.b64decode|Buffer\.from.{0,40}base64') {
         $findings.Add('encoded-or-obfuscated-command')
@@ -730,17 +762,31 @@ function Get-MonitoredFileFindings {
 function Start-LocalFileMonitoring {
     $script:fileMonitor = New-Object MizuzakyFileChangeMonitor
     $drives = @(Get-CimInstance -ClassName Win32_LogicalDisk -Filter 'DriveType=3' -ErrorAction Stop)
-    $ntfsDrives = @($drives | Where-Object { $_.FileSystem -eq 'NTFS' })
-    foreach ($drive in $drives) {
-        if ($drive.FileSystem -ne 'NTFS') {
+    $knownFolders = @(
+        (Join-Path $env:USERPROFILE 'Downloads')
+        [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
+        [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+    foreach ($folder in $knownFolders) {
+        if (-not (Test-Path -LiteralPath $folder -PathType Container)) {
+            $script:fileMonitoringCoverageIncomplete = $true
+            Write-AssistantLog ('User folder is not available for file monitoring: {0}' -f $folder)
+            continue
+        }
+        $volumeRoot = [IO.Path]::GetPathRoot($folder)
+        $volume = $drives | Where-Object { $_.DeviceID -eq $volumeRoot.TrimEnd('\') } | Select-Object -First 1
+        if (-not $volume -or $volume.FileSystem -ne 'NTFS') {
+            $script:fileMonitoringCoverageIncomplete = $true
+            Write-AssistantLog ('Skipping file monitoring for non-local-NTFS folder: {0}' -f $folder)
             continue
         }
         try {
-            $script:fileMonitor.AddRoot($drive.DeviceID + '\')
-            Write-AssistantLog ('Local NTFS file-change monitoring started for {0}.' -f $drive.DeviceID)
+            $script:fileMonitor.AddRoot($folder)
+            Write-AssistantLog ('Local NTFS file-change monitoring started for user folder {0}.' -f $folder)
         }
         catch {
-            Write-AssistantLog ('Could not monitor local volume {0}: {1}' -f $drive.DeviceID, $_.Exception.Message)
+            $script:fileMonitoringCoverageIncomplete = $true
+            Write-AssistantLog ('Could not monitor user folder {0}: {1}' -f $folder, $_.Exception.Message)
         }
     }
 
@@ -748,15 +794,11 @@ function Start-LocalFileMonitoring {
     if ($script:fileMonitorRoots -eq 0) {
         $script:fileMonitoringUnavailable = $true
         $script:statusText.Text = Get-Text 'FileWatchUnavailable'
-        Write-AssistantLog 'No local NTFS volume could be monitored for file changes.'
+        Write-AssistantLog 'No local NTFS user folder could be monitored for file changes.'
         return
     }
-    if ($script:fileMonitorRoots -lt $ntfsDrives.Count) {
-        $script:fileMonitoringCoverageIncomplete = $true
-        $script:statusText.Text = Get-Text 'FileWatchCoverageWarning'
-    }
 
-    Write-AssistantLog ('Monitoring file changes on {0} local NTFS volume(s). Only file changes observed after startup are reviewed; no file contents are uploaded or executed.' -f $script:fileMonitorRoots)
+    Write-AssistantLog ('Monitoring {0} user folders on local NTFS volumes. Other folders are not monitored; no file contents are uploaded or executed.' -f $script:fileMonitorRoots)
     $script:fileReviewTimer = New-Object System.Windows.Threading.DispatcherTimer
     $script:fileReviewTimer.Interval = [TimeSpan]::FromSeconds(2)
     $script:fileReviewTimer.Add_Tick({ Invoke-PendingFileReview })
@@ -1274,7 +1316,7 @@ function Toggle-Startup {
             $shell = New-Object -ComObject WScript.Shell
             $shortcut = $shell.CreateShortcut($startupLink)
             $shortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-            $shortcut.Arguments = '-NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $scriptPath + '"'
+            $shortcut.Arguments = '-NoProfile -STA -WindowStyle Hidden -File "' + $scriptPath + '"'
             $shortcut.WorkingDirectory = Split-Path -Parent $scriptPath
             $shortcut.Description = 'Windows health mascot'
             $shortcut.Save()

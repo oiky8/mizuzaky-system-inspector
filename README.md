@@ -10,7 +10,7 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 - Reviews recent error events from the Windows **System** and **Application** logs against [`error-catalog.json`](./error-catalog.json).
 - Selects Vietnamese, Simplified or Traditional Chinese, Spanish, French, German, Japanese, Korean, Portuguese, Russian, Arabic, Hindi, Indonesian, or Thai from the Windows UI language; other languages fall back to English. Arabic uses right-to-left layout. UI strings are kept in [`locales.json`](./locales.json) for future translations.
 - Detects common toolchains available on `PATH`: Python, Node.js (JavaScript/TypeScript), Java, .NET (including C#), Go, Rust, PHP, Ruby, Perl, Lua, R, Swift, and C/C++. It reports matching recent Windows application-crash events without running runtimes.
-- Watches file changes on local NTFS volumes while the app is running. Files marked by Windows as downloaded from the Internet are checked for that origin; supported executable files also have their Authenticode signature status checked. Changed source files inside Git working trees are inspected for a short allowlist of risky code patterns. Small source files in marked ZIP downloads are inspected without extracting them. Only heuristic matches are reported; no file is changed, executed, quarantined, or uploaded.
+- Watches changes only under the current user's `Downloads`, `Desktop`, and `Documents` folders on local NTFS. It queues supported source files, executable types, and ZIP archives, skipping dependency/build/cache folders such as `.git`, `node_modules`, `vendor`, `bin`, and `obj`. Files marked by Windows as downloaded from the Internet are checked for that origin; supported executable files also have their Authenticode signature status checked. Changed source files inside Git working trees under those folders are inspected for a short allowlist of risky code patterns. Small source files in marked ZIP downloads are inspected without extracting them. Only heuristic matches are reported; no file is changed, executed, quarantined, or uploaded.
 - Runs an initial check at startup, then checks every three hours.
 - Defers checks for 15 minutes when CPU usage is at least 70% or free memory is below 1.5 GB.
 - Sets only its own process priority to `BelowNormal`; it does not close or reprioritize other applications.
@@ -19,7 +19,7 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 - Opens a Microsoft Learn search only when the user clicks the search button. It sends a generic event identifier, not event log contents.
 - Writes a local log to `%LOCALAPPDATA%\MizuzakySystemInspector\assistant.log`.
 
-The error catalog is an editable starter set, not a comprehensive knowledge base. File review is a lightweight static heuristic, not antivirus, a full security audit, or proof that a file is safe; Windows Defender or another reputable antivirus is still required. A valid Authenticode signature does not prove software is safe, and unsigned software is not automatically malicious. Monitoring starts when the app starts and is limited to local NTFS volumes. It does not cover network/removable/non-NTFS volumes, files already present at startup, or downloads that Windows does not mark with Internet Zone information. Git source is reviewed only when a file change is observed while the app is running; notification overflow or high system load can delay or miss reviews. Source files over 256 KB, executable signature checks over 100 MB, and ZIP archives over 50 MB are skipped; ZIP inspection is limited to 50 small source entries. No source text is included in email; email reports remain count-only. Programming-language runtime detection is limited to the listed toolchains and crash events Windows records. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
+The error catalog is an editable starter set, not a comprehensive knowledge base. File review is a lightweight static heuristic, not antivirus, a full security audit, or proof that a file is safe; Windows Defender or another reputable antivirus is still required. A valid Authenticode signature does not prove software is safe, and unsigned software is not automatically malicious. Monitoring starts when the app starts and covers only the current user's `Downloads`, `Desktop`, and `Documents` folders on local NTFS. Files elsewhere—including Git repositories outside those folders—network/removable/non-NTFS volumes, files already present at startup, and downloads that Windows does not mark with Internet Zone information are not covered. Git source is reviewed only when a file change is observed while the app is running; notification overflow or high system load can delay or miss reviews. Source files over 256 KB, executable signature checks over 100 MB, and ZIP archives over 50 MB are skipped; ZIP inspection is limited to 50 small source entries. Network-retrieval and dynamic-execution APIs are reported as separate weak indicators; their presence alone does not establish malicious behavior. No source text is included in email; email reports remain count-only. Programming-language runtime detection is limited to the listed toolchains and crash events Windows records. Internet search results are never downloaded or executed as repairs. Unknown, risky, or cross-component issues are reported for owner review.
 
 ## Requirements
 
@@ -32,17 +32,19 @@ The error catalog is an editable starter set, not a comprehensive knowledge base
 Open PowerShell in the project folder and run:
 
 ```powershell
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1"
+powershell.exe -NoProfile -STA -File ".\mizuzaky-system-inspector.ps1"
 ```
 
 Use **Start with Windows** in the app to add or remove its shortcut from the current user's Startup folder. The app starts after that user signs in; it does not run before sign-in.
+
+The app does not bypass PowerShell's execution policy. If your policy blocks the script, use an approved signed copy or ask your administrator; do not weaken a managed policy.
 
 ## Email reports
 
 To configure email, run the script interactively in PowerShell:
 
 ```powershell
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
+powershell.exe -NoProfile -STA -File ".\mizuzaky-system-inspector.ps1" -ConfigureEmail
 ```
 
 Enter your provider's public SMTP hostname, port `587`, sender, recipient, and SMTP username/app password. The app rejects IP addresses, local-only hostnames, non-587 ports, and address display-name syntax. It uses authenticated SMTP with STARTTLS, requires TLS 1.2, and relies on Windows/.NET's normal server-certificate chain and hostname validation; invalid or self-signed certificates fail closed. Providers that do not offer STARTTLS on port 587 are not supported.
