@@ -9,3 +9,4 @@ email-credential.xml
 assistant.log
 last-report.json
 last-report.dat
+/dist/
