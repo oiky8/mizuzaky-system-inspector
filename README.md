@@ -51,7 +51,7 @@ The app does not bypass PowerShell's execution policy. If your policy blocks the
 
 The Windows installer is built with Inno Setup 6. Install Inno Setup, then compile `installer.iss` with Inno Setup Compiler (`ISCC.exe`). The installer executable is written to `dist\MizuzakySystemInspector-Setup.exe`.
 
-The installer is per-user and does not require administrator privileges. On the final page, choose **Run Mizuzaky System Inspector now** to launch the app immediately, or leave it unchecked to finish without starting the app. The installer also offers an optional desktop shortcut. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
+The installer is per-user and does not require administrator privileges. It creates a desktop shortcut by default; clear **Create a desktop shortcut** during setup if you do not want one. Double-click the shortcut to open the app. On the final page, choose **Run Mizuzaky System Inspector now** to launch the app immediately, or leave it unchecked to finish without starting the app. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
 
 ## Email reports
 

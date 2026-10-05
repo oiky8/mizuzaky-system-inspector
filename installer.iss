@@ -27,7 +27,7 @@ UninstallDisplayIcon={sys}\WindowsPowerShell\v1.0\powershell.exe
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
+Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
 
 [Files]
 Source: "mizuzaky-system-inspector.ps1"; DestDir: "{app}"; Flags: ignoreversion
