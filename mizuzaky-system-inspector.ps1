@@ -1,7 +1,9 @@
 #requires -Version 5.1
 
 param(
-    [switch]$ConfigureEmail
+    [switch]$ConfigureEmail,
+    [ValidateSet('en', 'vi', 'zh-CN', 'zh-TW', 'es', 'fr', 'de', 'ja', 'ko', 'pt', 'ru', 'ar', 'hi', 'id', 'th')]
+    [string]$Language
 )
 
 $ErrorActionPreference = 'Stop'
@@ -234,15 +236,20 @@ $script:minimumFreeMemoryMB = 1536
 $script:emailReportMinimumInterval = [TimeSpan]::FromHours(1)
 $script:emailReportRepeatInterval = [TimeSpan]::FromHours(24)
 $script:reportStateEntropy = [Text.Encoding]::UTF8.GetBytes('MizuzakySystemInspector.ReportState.v1')
-$uiCulture = [Globalization.CultureInfo]::CurrentUICulture
-if ($uiCulture.Name -match '^zh-(TW|HK|MO|Hant)') {
-    $script:language = 'zh-TW'
-}
-elseif ($uiCulture.TwoLetterISOLanguageName -eq 'zh') {
-    $script:language = 'zh-CN'
+if ($Language) {
+    $script:language = $Language
 }
 else {
-    $script:language = $uiCulture.TwoLetterISOLanguageName
+    $uiCulture = [Globalization.CultureInfo]::CurrentUICulture
+    if ($uiCulture.Name -match '^zh-(TW|HK|MO|Hant)') {
+        $script:language = 'zh-TW'
+    }
+    elseif ($uiCulture.TwoLetterISOLanguageName -eq 'zh') {
+        $script:language = 'zh-CN'
+    }
+    else {
+        $script:language = $uiCulture.TwoLetterISOLanguageName
+    }
 }
 $localePath = Join-Path (Split-Path -Parent $PSCommandPath) 'locales.json'
 try {
@@ -1379,7 +1386,7 @@ function Toggle-Startup {
             $shell = New-Object -ComObject WScript.Shell
             $shortcut = $shell.CreateShortcut($startupLink)
             $shortcut.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-            $shortcut.Arguments = '-NoProfile -STA -WindowStyle Hidden -File "' + $scriptPath + '"'
+            $shortcut.Arguments = '-NoProfile -STA -WindowStyle Hidden -File "' + $scriptPath + '" -Language "' + $script:language + '"'
             $shortcut.WorkingDirectory = Split-Path -Parent $scriptPath
             $shortcut.Description = 'Windows health mascot'
             $shortcut.Save()

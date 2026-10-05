@@ -23,7 +23,7 @@ WizardStyle=modern
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={sys}\WindowsPowerShell\v1.0\powershell.exe
 LanguageDetectionMethod=uilanguage
-ShowLanguageDialog=no
+ShowLanguageDialog=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -41,6 +41,7 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 Name: "indonesian"; MessagesFile: "compiler:Default.isl,installer-languages\Indonesian.isl"
 Name: "thai"; MessagesFile: "compiler:Languages\Thai.isl"
+Name: "hindi"; MessagesFile: "compiler:Default.isl,installer-languages\Hindi.isl"
 
 [CustomMessages]
 english.CreateDesktopShortcut=Create a desktop shortcut
@@ -88,6 +89,9 @@ indonesian.RunNow=Jalankan Mizuzaky System Inspector sekarang
 thai.CreateDesktopShortcut=สร้างทางลัดบนเดสก์ท็อป
 thai.AdditionalShortcuts=ทางลัดเพิ่มเติม:
 thai.RunNow=เรียกใช้ Mizuzaky System Inspector ทันที
+hindi.CreateDesktopShortcut=डेस्कटॉप शॉर्टकट बनाएँ
+hindi.AdditionalShortcuts=अतिरिक्त शॉर्टकट:
+hindi.RunNow=Mizuzaky System Inspector अभी चलाएँ
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopShortcut}"; GroupDescription: "{cm:AdditionalShortcuts}"
@@ -98,8 +102,43 @@ Source: "error-catalog.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "locales.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"" -Language {code:GetAppUiLanguage}"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked
+
+[Code]
+function GetAppUiLanguage(Param: String): String;
+begin
+  if ActiveLanguage = 'vietnamese' then
+    Result := 'vi'
+  else if ActiveLanguage = 'chinesesimplified' then
+    Result := 'zh-CN'
+  else if ActiveLanguage = 'chinesetraditional' then
+    Result := 'zh-TW'
+  else if ActiveLanguage = 'spanish' then
+    Result := 'es'
+  else if ActiveLanguage = 'french' then
+    Result := 'fr'
+  else if ActiveLanguage = 'german' then
+    Result := 'de'
+  else if ActiveLanguage = 'japanese' then
+    Result := 'ja'
+  else if ActiveLanguage = 'korean' then
+    Result := 'ko'
+  else if (ActiveLanguage = 'portuguese') or (ActiveLanguage = 'brazilianportuguese') then
+    Result := 'pt'
+  else if ActiveLanguage = 'russian' then
+    Result := 'ru'
+  else if ActiveLanguage = 'arabic' then
+    Result := 'ar'
+  else if ActiveLanguage = 'hindi' then
+    Result := 'hi'
+  else if ActiveLanguage = 'indonesian' then
+    Result := 'id'
+  else if ActiveLanguage = 'thai' then
+    Result := 'th'
+  else
+    Result := 'en';
+end;
