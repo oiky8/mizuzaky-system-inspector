@@ -4,6 +4,12 @@ A lightweight Windows desktop mascot for periodic, load-aware system health chec
 
 > **Prototype:** This project uses a small set of deterministic checks. It is not an AI agent and cannot diagnose or safely repair every Windows problem.
 
+## Read this page in your language
+
+**English** · [Tiếng Việt](./README.vi.md) · [简体中文](https://translate.google.com/translate?sl=auto&tl=zh-CN&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [繁體中文](https://translate.google.com/translate?sl=auto&tl=zh-TW&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Español](https://translate.google.com/translate?sl=auto&tl=es&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Français](https://translate.google.com/translate?sl=auto&tl=fr&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Deutsch](https://translate.google.com/translate?sl=auto&tl=de&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [日本語](https://translate.google.com/translate?sl=auto&tl=ja&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [한국어](https://translate.google.com/translate?sl=auto&tl=ko&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Português](https://translate.google.com/translate?sl=auto&tl=pt&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Русский](https://translate.google.com/translate?sl=auto&tl=ru&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [العربية](https://translate.google.com/translate?sl=auto&tl=ar&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [हिन्दी](https://translate.google.com/translate?sl=auto&tl=hi&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Bahasa Indonesia](https://translate.google.com/translate?sl=auto&tl=id&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [ไทย](https://translate.google.com/translate?sl=auto&tl=th&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector)
+
+GitHub displays README files as static Markdown and cannot automatically select a translation from your browser language. Use a link above, or use your browser's built-in **Translate page** command for automatic translation. Google Translate receives the public repository URL when one of its links is used.
+
 ## Features
 
 - Checks local disk space, DNS resolution, and Internet connectivity.

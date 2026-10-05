@@ -4,6 +4,12 @@ Linh vật trên màn hình Windows, kiểm tra sức khỏe hệ thống địn
 
 > **Bản thử nghiệm:** Dự án dùng một số quy tắc kiểm tra cố định. Đây chưa phải trợ lý AI và không thể chẩn đoán hoặc sửa an toàn mọi lỗi Windows.
 
+## Đọc README bằng ngôn ngữ của bạn
+
+[English](./README.md) · **Tiếng Việt** · [简体中文](https://translate.google.com/translate?sl=auto&tl=zh-CN&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [繁體中文](https://translate.google.com/translate?sl=auto&tl=zh-TW&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Español](https://translate.google.com/translate?sl=auto&tl=es&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Français](https://translate.google.com/translate?sl=auto&tl=fr&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Deutsch](https://translate.google.com/translate?sl=auto&tl=de&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [日本語](https://translate.google.com/translate?sl=auto&tl=ja&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [한국어](https://translate.google.com/translate?sl=auto&tl=ko&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Português](https://translate.google.com/translate?sl=auto&tl=pt&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Русский](https://translate.google.com/translate?sl=auto&tl=ru&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [العربية](https://translate.google.com/translate?sl=auto&tl=ar&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [हिन्दी](https://translate.google.com/translate?sl=auto&tl=hi&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [Bahasa Indonesia](https://translate.google.com/translate?sl=auto&tl=id&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector) · [ไทย](https://translate.google.com/translate?sl=auto&tl=th&u=https%3A%2F%2Fgithub.com%2Foiky8%2Fmizuzaky-system-inspector)
+
+GitHub hiển thị README dưới dạng Markdown tĩnh nên không tự chọn bản dịch theo ngôn ngữ trình duyệt. Hãy chọn ngôn ngữ ở trên hoặc dùng chức năng **Dịch trang** tích hợp trong trình duyệt để tự dịch theo ngôn ngữ bạn dùng. Nếu bấm liên kết Google Translate, dịch vụ này sẽ nhận URL repository công khai.
+
 ## Tính năng
 
 - Kiểm tra dung lượng ổ đĩa, phân giải DNS và kết nối Internet.
