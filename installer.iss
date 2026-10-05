@@ -22,12 +22,75 @@ SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={sys}\WindowsPowerShell\v1.0\powershell.exe
+LanguageDetectionMethod=uilanguage
+ShowLanguageDialog=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "vietnamese"; MessagesFile: "compiler:Default.isl,installer-languages\Vietnamese.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Default.isl,installer-languages\ChineseSimplified.isl"
+Name: "chinesetraditional"; MessagesFile: "compiler:Default.isl,installer-languages\ChineseTraditional.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
+Name: "indonesian"; MessagesFile: "compiler:Default.isl,installer-languages\Indonesian.isl"
+Name: "thai"; MessagesFile: "compiler:Languages\Thai.isl"
+
+[CustomMessages]
+english.CreateDesktopShortcut=Create a desktop shortcut
+english.AdditionalShortcuts=Additional shortcuts:
+english.RunNow=Run Mizuzaky System Inspector now
+vietnamese.CreateDesktopShortcut=Tạo lối tắt trên màn hình nền
+vietnamese.AdditionalShortcuts=Lối tắt bổ sung:
+vietnamese.RunNow=Chạy Mizuzaky System Inspector ngay
+chinesesimplified.CreateDesktopShortcut=创建桌面快捷方式
+chinesesimplified.AdditionalShortcuts=其他快捷方式：
+chinesesimplified.RunNow=立即运行 Mizuzaky System Inspector
+chinesetraditional.CreateDesktopShortcut=建立桌面捷徑
+chinesetraditional.AdditionalShortcuts=其他捷徑：
+chinesetraditional.RunNow=立即執行 Mizuzaky System Inspector
+spanish.CreateDesktopShortcut=Crear un acceso directo en el escritorio
+spanish.AdditionalShortcuts=Accesos directos adicionales:
+spanish.RunNow=Ejecutar Mizuzaky System Inspector ahora
+french.CreateDesktopShortcut=Créer un raccourci sur le bureau
+french.AdditionalShortcuts=Raccourcis supplémentaires :
+french.RunNow=Exécuter Mizuzaky System Inspector maintenant
+german.CreateDesktopShortcut=Desktopverknüpfung erstellen
+german.AdditionalShortcuts=Zusätzliche Verknüpfungen:
+german.RunNow=Mizuzaky System Inspector jetzt starten
+japanese.CreateDesktopShortcut=デスクトップにショートカットを作成する
+japanese.AdditionalShortcuts=追加のショートカット:
+japanese.RunNow=Mizuzaky System Inspector を今すぐ実行
+korean.CreateDesktopShortcut=바탕 화면 바로 가기 만들기
+korean.AdditionalShortcuts=추가 바로 가기:
+korean.RunNow=Mizuzaky System Inspector 지금 실행
+portuguese.CreateDesktopShortcut=Criar um atalho no ambiente de trabalho
+portuguese.AdditionalShortcuts=Atalhos adicionais:
+portuguese.RunNow=Executar Mizuzaky System Inspector agora
+brazilianportuguese.CreateDesktopShortcut=Criar um atalho na área de trabalho
+brazilianportuguese.AdditionalShortcuts=Atalhos adicionais:
+brazilianportuguese.RunNow=Executar Mizuzaky System Inspector agora
+russian.CreateDesktopShortcut=Создать ярлык на рабочем столе
+russian.AdditionalShortcuts=Дополнительные ярлыки:
+russian.RunNow=Запустить Mizuzaky System Inspector сейчас
+arabic.CreateDesktopShortcut=إنشاء اختصار على سطح المكتب
+arabic.AdditionalShortcuts=اختصارات إضافية:
+arabic.RunNow=تشغيل Mizuzaky System Inspector الآن
+indonesian.CreateDesktopShortcut=Buat pintasan desktop
+indonesian.AdditionalShortcuts=Pintasan tambahan:
+indonesian.RunNow=Jalankan Mizuzaky System Inspector sekarang
+thai.CreateDesktopShortcut=สร้างทางลัดบนเดสก์ท็อป
+thai.AdditionalShortcuts=ทางลัดเพิ่มเติม:
+thai.RunNow=เรียกใช้ Mizuzaky System Inspector ทันที
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
+Name: "desktopicon"; Description: "{cm:CreateDesktopShortcut}"; GroupDescription: "{cm:AdditionalShortcuts}"
 
 [Files]
 Source: "mizuzaky-system-inspector.ps1"; DestDir: "{app}"; Flags: ignoreversion
@@ -39,4 +102,4 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\pow
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"; Description: "Run Mizuzaky System Inspector now"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -STA -File ""{app}\mizuzaky-system-inspector.ps1"""; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: postinstall nowait skipifsilent runasoriginaluser unchecked

@@ -51,7 +51,9 @@ The app does not bypass PowerShell's execution policy. If your policy blocks the
 
 The Windows installer is built with Inno Setup 6. Install Inno Setup, then compile `installer.iss` with Inno Setup Compiler (`ISCC.exe`). The installer executable is written to `dist\MizuzakySystemInspector-Setup.exe`.
 
-The installer is per-user and does not require administrator privileges. It creates a desktop shortcut by default; clear **Create a desktop shortcut** during setup if you do not want one. Double-click the shortcut to open the app. On the final page, choose **Run Mizuzaky System Inspector now** to launch the app immediately, or leave it unchecked to finish without starting the app. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
+The installer is per-user and does not require administrator privileges. It automatically selects its interface language from the Windows display language, with English as the fallback. Its translations cover the same languages as the app except Hindi; on Hindi Windows, the installer uses English and the app uses Hindi. It creates a desktop shortcut by default; clear the translated **Create a desktop shortcut** option during setup if you do not want one. Double-click the shortcut to open the app. On the final page, choose the translated **Run Mizuzaky System Inspector now** option to launch the app immediately, or leave it unchecked to finish without starting the app. Uninstalling removes the installed program and shortcuts but preserves the user's local settings and reports.
+
+Vietnamese, Simplified Chinese, Traditional Chinese, and Indonesian installer message files are sourced from [Inno Setup's language translations](https://github.com/jrsoftware/issrc/tree/a942f923d84b7a227b49af1721a1dc4492831ec0/Files/Languages). The upstream translation files retain their original contributor attribution.
 
 ## Email reports
 
